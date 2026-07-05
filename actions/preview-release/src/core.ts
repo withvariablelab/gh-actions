@@ -25,10 +25,16 @@ const PublishMode = {
 type PublishMode = (typeof PublishMode)[keyof typeof PublishMode];
 
 async function bumpPackage(pkg: Package, preid: string): Promise<string> {
-  const result = await runLogged("pnpm", ["version", "prerelease", "--preid", preid, "--no-git-tag-version"], {
-    cwd: pkg.path,
-    group: `pnpm version: ${pkg.name}`,
-  });
+  // --no-git-checks: pnpm version refuses to run on an unclean working tree
+  // by default, and CI steps before this one may leave the tree dirty
+  const result = await runLogged(
+    "pnpm",
+    ["version", "prerelease", "--preid", preid, "--no-git-tag-version", "--no-git-checks"],
+    {
+      cwd: pkg.path,
+      group: `pnpm version: ${pkg.name}`,
+    },
+  );
   if (result.exitCode !== 0) {
     throw new Error(`pnpm version failed for ${pkg.name} (exit ${result.exitCode}): ${result.output}`);
   }
