@@ -11,6 +11,10 @@ inputs:
     description: Token for authentication with npm registry
     required: false
 
+  publish_mode:
+    description: "Override publish mode detection: token-only | oidc-only | oidc-with-token-fallback"
+    required: false
+
   vland_bot_url:
     description: URL of the vland-bot server
     required: false

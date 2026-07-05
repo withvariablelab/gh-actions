@@ -7,6 +7,10 @@ inputs:
     description: Token for authentication with npm registry
     required: false
 
+  publish_mode:
+    description: "Override publish mode detection: token-only | oidc-only | oidc-with-token-fallback"
+    required: false
+
   working_directory:
     description: Directory containing the package to publish
     required: false

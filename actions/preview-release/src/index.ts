@@ -3,7 +3,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { HttpClient } from "@actions/http-client";
 import { BearerCredentialHandler } from "@actions/http-client/lib/auth";
-import { release } from "./core.ts";
+import { parsePublishMode, release } from "./core.ts";
 
 try {
   // Refuse `pull_request_target`. The trigger gives the workflow access to
@@ -20,6 +20,7 @@ try {
   const npmToken = core.getInput("npm_token") || undefined;
   const workingDirectory = core.getInput("working_directory") || ".";
   const vlandBotUrl = core.getInput("vland_bot_url") || "https://bot.variable.land";
+  const publishMode = parsePublishMode(core.getInput("publish_mode"));
 
   if (npmToken) core.setSecret(npmToken);
 
@@ -45,6 +46,7 @@ try {
     prNumber,
     latestCommitSha,
     npmToken,
+    publishMode,
   });
 
   const oidcToken = await core.getIDToken("vland-bot");

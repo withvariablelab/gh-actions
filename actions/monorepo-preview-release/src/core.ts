@@ -28,26 +28,37 @@ type Options = {
   prNumber: number;
   latestCommitSha: string;
   npmToken?: string;
+  publishMode?: PublishMode;
 };
 
-const PublishMode = {
+export const PublishMode = {
   OIDC_WITH_TOKEN_FALLBACK: "oidc-with-token-fallback",
   OIDC_ONLY: "oidc-only",
   TOKEN_ONLY: "token-only",
 } as const;
-type PublishMode = (typeof PublishMode)[keyof typeof PublishMode];
+export type PublishMode = (typeof PublishMode)[keyof typeof PublishMode];
+
+export function parsePublishMode(value: string): PublishMode | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const modes = Object.values(PublishMode);
+
+  if (!modes.includes(value as PublishMode)) {
+    throw new Error(`Invalid publish_mode "${value}". Expected one of: ${modes.join(", ")}`);
+  }
+
+  return value as PublishMode;
+}
 
 async function bumpPackage(pkg: WorkspacePackage, preid: string): Promise<string> {
   // --no-git-checks: earlier bumps in the same run dirty the working tree,
   // and pnpm version refuses to run on an unclean tree by default
-  const result = await runLogged(
-    "pnpm",
-    ["version", "prerelease", "--preid", preid, "--no-git-tag-version", "--no-git-checks"],
-    {
-      cwd: pkg.path,
-      group: `pnpm version: ${pkg.name}`,
-    },
-  );
+  const result = await runLogged("pnpm", ["version", "prerelease", "--preid", preid, "--no-git-tag-version", "--no-git-checks"], {
+    cwd: pkg.path,
+    group: `pnpm version: ${pkg.name}`,
+  });
   if (result.exitCode !== 0) {
     throw new Error(`pnpm version failed for ${pkg.name} (exit ${result.exitCode}): ${result.output}`);
   }
@@ -133,7 +144,7 @@ export function getPublishTag(prNumber: number) {
 
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { octokit, workspaceDir = process.cwd(), owner, repo, prNumber, latestCommitSha, npmToken } = options;
-  const mode = detectMode(workspaceDir, !!npmToken);
+  const mode = options.publishMode ?? detectMode(workspaceDir, !!npmToken);
   core.debug(`mode: ${mode}, hasNpmToken: ${!!npmToken}`);
 
   return withNpmAuth(npmToken, async () => {
