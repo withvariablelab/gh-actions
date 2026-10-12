@@ -1,6 +1,6 @@
-# Variable Land — GitHub Actions
+# Variable Lab — GitHub Actions
 
-Reusable GitHub Actions used across Variable Land projects.
+Reusable GitHub Actions used across Variable Lab and Variable Land projects.
 
 ## Actions
 
@@ -18,7 +18,7 @@ Reusable GitHub Actions used across Variable Land projects.
 Pin actions to a tag or commit SHA when you need stability:
 
 ```yml
-uses: variableland/gh-actions/actions/<action-name>@<tag-or-sha>
+uses: withvariablelab/gh-actions/actions/<action-name>@<tag-or-sha>
 ```
 
 `@main` tracks the latest changes on the default branch.

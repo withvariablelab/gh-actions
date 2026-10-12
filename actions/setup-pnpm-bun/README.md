@@ -13,5 +13,5 @@ It runs the full pnpm flow (install pnpm, upgrade npm, cache the store, `pnpm in
 
 ```yml
 - name: ⌛ Setup pnpm + Bun
-  uses: variableland/gh-actions/actions/setup-pnpm-bun@main
+  uses: withvariablelab/gh-actions/actions/setup-pnpm-bun@main
 ```

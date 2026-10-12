@@ -8,7 +8,7 @@ The action looks up the target service from `project_id` + `environment` + `serv
 
 ```yml
 - name: 🚀 Redeploy Railway
-  uses: variableland/gh-actions/actions/railway-redeploy@main
+  uses: withvariablelab/gh-actions/actions/railway-redeploy@main
   with:
     project_id: ${{ vars.RAILWAY_PROJECT_ID }}
     api_token: ${{ secrets.RAILWAY_API_TOKEN }}
@@ -63,11 +63,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ⌛ Setup Bun
-        uses: variableland/gh-actions/actions/setup-bun@main
+        uses: withvariablelab/gh-actions/actions/setup-bun@main
 
       - name: 🚀 Redeploy Railway
         id: redeploy
-        uses: variableland/gh-actions/actions/railway-redeploy@main
+        uses: withvariablelab/gh-actions/actions/railway-redeploy@main
         with:
           project_id: ${{ vars.RAILWAY_PROJECT_ID }}
           api_token: ${{ secrets.RAILWAY_API_TOKEN }}

@@ -12,7 +12,7 @@ GitHub Action that prepares a pnpm-based workflow:
 
 ```yml
 - name: ⌛ Setup pnpm
-  uses: variableland/gh-actions/actions/setup-pnpm@main
+  uses: withvariablelab/gh-actions/actions/setup-pnpm@main
 ```
 
 ## Requirements
