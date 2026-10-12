@@ -54,3 +54,7 @@ Every Node-based action in this monorepo follows the same shape:
 7. `preview-release` and `monorepo-preview-release` carry **byte-identical copies** of the comment-mode code (`src/comment.ts`, `src/types.ts`) and the shared tests (`src/comment.test.ts`, `src/core.test.ts`). Change both copies together; CI diffs them.
 
 To add a new Node action, copy the structure of `monorepo-preview-release` or `railway-redeploy`, adjust inputs and logic, and run `mise run build` (or just `git push` — the hook will do it for you and tell you to commit the dist change).
+
+## Security linting
+
+[`zizmor`](https://docs.zizmor.sh) audits the workflows and composite actions on every PR and on pushes to `main` ([`zizmor.yml`](./.github/workflows/zizmor.yml), config in [`.github/zizmor.yml`](./.github/zizmor.yml)). Third-party actions are pinned to a full commit SHA with the version in a comment; `withvariablelab/*` is allowed at a ref (`@main`). Run it locally with `uvx zizmor .` or `pipx run zizmor .`.
