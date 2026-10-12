@@ -3,6 +3,11 @@ name: preview-release
 description: Action to release a standalone library with a PR related tag
 
 inputs:
+  mode:
+    description: "What to do: server (publish, then notify the vland-bot server) | publish (publish only and set the outputs) | comment (no publish; upsert the PR comment from `packages` with `github_token`)"
+    required: false
+    default: "server"
+
   npm_token:
     description: Token for authentication with npm registry
     required: false
@@ -20,6 +25,24 @@ inputs:
     description: URL of the vland-bot server
     required: false
     default: "https://bot.variable.land"
+
+  packages:
+    description: "comment mode only (required there): the `packages` output of a publish-mode run. Untrusted; validated before use"
+    required: false
+
+  github_token:
+    description: "comment mode only (required there): token that can write PR comments, e.g. a GitHub App installation token with pull-requests: write"
+    required: false
+
+outputs:
+  packages:
+    description: "publish mode only: JSON array of { packageName, nextVersion, firstTime } for the published package (empty when nothing was published)"
+
+  pr-number:
+    description: publish mode only. Number of the pull request the preview belongs to
+
+  head-sha:
+    description: publish mode only. Head commit SHA of the pull request
 
 runs:
   using: node24

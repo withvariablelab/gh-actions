@@ -9,6 +9,7 @@ on:
       - "actions/*/tsconfig.json"
       - "actions/*/mise.toml"
       - "mise.toml"
+      - ".github/workflows/check-action-dist.yml"
 
 jobs:
   verify:
@@ -28,6 +29,17 @@ jobs:
 
       - name: 📦 Install deps
         run: mise run setup
+
+      - name: 🪞 Verify shared modules are identical
+        run: |
+          # preview-release and monorepo-preview-release carry the same copy
+          # of the comment-mode code and its tests.
+          for file in comment.ts comment.test.ts core.test.ts types.ts; do
+            diff -u "actions/preview-release/src/$file" "actions/monorepo-preview-release/src/$file"
+          done
+
+      - name: 🧪 Unit tests
+        run: mise run test
 
       - name: 🔨 Build all actions
         run: mise run build

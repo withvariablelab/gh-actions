@@ -8,6 +8,12 @@ pre-commit:
 
 pre-push:
   jobs:
+    - name: unit tests
+      run: mise run test
+      glob:
+        - "actions/*/src/**"
+        - "actions/*/package.json"
+
     - name: verify action dist
       run: |
         mise run build

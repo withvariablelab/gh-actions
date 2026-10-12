@@ -3,8 +3,13 @@ name: monorepo-preview-release
 description: Action to release packages in a monorepo with a PR related tag
 
 inputs:
+  mode:
+    description: "What to do: server (publish, then notify the vland-bot server) | publish (publish only and set the outputs) | comment (no publish; upsert the PR comment from `packages` with `github_token`)"
+    required: false
+    default: "server"
+
   github_token:
-    description: Token for authentication with GitHub API
+    description: "Token for the GitHub API. server/publish modes: list the PR's changed files (GITHUB_TOKEN is enough). comment mode: write the PR comment (e.g. a GitHub App installation token with pull-requests: write)"
     required: true
 
   npm_token:
@@ -19,6 +24,20 @@ inputs:
     description: URL of the vland-bot server
     required: false
     default: "https://bot.variable.land"
+
+  packages:
+    description: "comment mode only (required there): the `packages` output of a publish-mode run. Untrusted; validated before use"
+    required: false
+
+outputs:
+  packages:
+    description: "publish mode only: JSON array of { packageName, nextVersion, firstTime } for every published package (empty when nothing was published)"
+
+  pr-number:
+    description: publish mode only. Number of the pull request the preview belongs to
+
+  head-sha:
+    description: publish mode only. Head commit SHA of the pull request
 
 runs:
   using: node24

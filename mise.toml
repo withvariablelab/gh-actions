@@ -23,6 +23,10 @@ run = 'mise run "//actions/...:tsc"'
 description = 'static checks across all actions'
 run = 'mise run "//actions/...:check"'
 
+[tasks.test]
+description = 'unit tests across every action that declares the task'
+run = 'mise run "//actions/...:test"'
+
 [tasks.build]
 description = 'build dist/ for every Node action that declares the task'
 run = 'mise run "//actions/...:build"'
