@@ -1,5 +1,4 @@
-# Comments a PR with its preview packages as vland-bot. Never runs PR code.
-# Usage: see the preview-release and monorepo-preview-release READMEs.
+# Holds the bot key: never check out or run PR code here.
 name: Preview comment
 
 on:

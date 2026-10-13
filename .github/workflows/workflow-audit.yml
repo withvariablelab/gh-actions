@@ -1,6 +1,3 @@
-# Static security analysis of the GitHub Actions workflows (zizmor).
-# Config and reviewed exceptions: .github/zizmor.yml
-
 name: Workflow audit
 
 on:

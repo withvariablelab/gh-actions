@@ -2,11 +2,6 @@ rules:
   unpinned-uses:
     config:
       policies:
-        # First-party: consumers and preview-comment.yml track
-        # withvariablelab/gh-actions at @main on purpose.
-        # main is protected by rulesets (PR required, signed
-        # commits, no force-push or deletion), and pinning the self-reference
-        # by SHA would need a follow-up commit after every change.
+        # First-party actions are tracked at @main; main is protected by rulesets.
         "withvariablelab/*": ref-pin
-        # Everything else must be pinned to a full commit SHA.
         "*": hash-pin
