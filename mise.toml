@@ -33,9 +33,7 @@ run = 'mise run "//actions/...:build"'
 
 [tasks.check-dist]
 description = 'force-rebuild every dist/ and fail if it differs from the committed one'
-# --force: the per-action build tasks skip when dist/ is newer than src/, so a
-# hand-edited dist/ would otherwise be left as is and pass. The pathspec needs
-# the explicit glob: plain 'actions/*/dist' matches no file beneath dist/.
+# --force: build skips when dist/ is newer than src/; ':(glob)': plain 'actions/*/dist' matches no file beneath dist/.
 run = '''
 mise run --force "//actions/...:build"
 changes="$(git status --porcelain --untracked-files=all -- ':(glob)actions/*/dist/**')"
