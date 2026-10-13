@@ -49,7 +49,7 @@ Every Node-based action in this monorepo follows the same shape:
 2. **Source** lives in `src/`. The bundled output (`dist/index.js`) is committed to the repo and runs directly on the GitHub Actions runner — no Docker build, no install at runtime.
 3. **`mise.toml`** declares a `build` task that runs `ncc build src/index.ts -o dist`. Mise's incremental `sources`/`outputs` tracking skips the rebuild when nothing has changed, so `mise run build` does **not** catch a hand-edited `dist/`. The root **`check-dist`** task does: it force-rebuilds every `dist/` and fails if anything under `dist/` differs from the commit (including new files).
 4. The **lefthook `pre-push` hook** runs `mise run check-dist` for any push that touches an action's `src/`, `dist/`, `package.json`, `package-lock.json` or `tsconfig.json`, and blocks the push if `dist/` is out of sync with `src/`.
-5. The CI workflow **`Check actions dist sync`** runs `check-dist` on every PR (no `paths:` filter, so a PR that only edits `dist/` or `action.yml` is checked too). Its `verify` job is a required status check in the `main` ruleset. Anyone who bypasses the local hook still gets caught here.
+5. CI (`Check actions dist sync`) runs `check-dist` on every PR. It is a required check, so bypassing the local hook still gets caught.
 6. **Unit tests** live next to the code as `src/**/*.test.ts` and run with Node's built-in test runner (`node --test`, native type stripping, no extra dependencies): `mise run test` per action or at the root. The pre-push hook and `Check actions dist sync` run them too.
 7. `preview-release` and `monorepo-preview-release` carry **byte-identical copies** of the comment-mode code (`src/comment.ts`, `src/types.ts`) and the shared tests (`src/comment.test.ts`, `src/core.test.ts`). Change both copies together; CI diffs them.
 
@@ -72,4 +72,4 @@ New dependency versions must be at least 24 h old before they get in. Most malic
 
 ## Security linting
 
-[`zizmor`](https://docs.zizmor.sh) audits the workflows and composite actions on every PR and on pushes to `main` ([`zizmor.yml`](./.github/workflows/zizmor.yml), config in [`.github/zizmor.yml`](./.github/zizmor.yml)). Third-party actions are pinned to a full commit SHA with the version in a comment; `withvariablelab/*` is allowed at a ref (`@main`). Run it locally with `uvx zizmor .` or `pipx run zizmor .`.
+`Workflow audit` ([`workflow-audit.yml`](./.github/workflows/workflow-audit.yml)) runs [zizmor](https://docs.zizmor.sh) on every PR and push to `main` (config: [`.github/zizmor.yml`](./.github/zizmor.yml)). Third-party actions are pinned by SHA; `withvariablelab/*` is allowed at `@main`. Locally: `pipx run zizmor .`.
