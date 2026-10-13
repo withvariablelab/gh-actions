@@ -15,7 +15,7 @@ For each PR:
 
 ```yml
 - name: 🚀 Preview release
-  uses: variableland/gh-actions/actions/monorepo-preview-release@main
+  uses: withvariablelab/gh-actions/actions/monorepo-preview-release@main
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     npm_token: ${{ secrets.NPM_TOKEN }} # optional, see "Authentication" below
@@ -92,7 +92,7 @@ The mutating commands (`pnpm version`, `pnpm publish`) stream their combined out
 
 Because `pnpm publish` is invoked from inside the action, the caller's job needs:
 
-- **`pnpm` available in `PATH`** — easiest via [`variableland/gh-actions/actions/setup-pnpm`](../setup-pnpm/README.md) or `corepack enable`.
+- **`pnpm` available in `PATH`** — easiest via [`withvariablelab/gh-actions/actions/setup-pnpm`](../setup-pnpm/README.md) or `corepack enable`.
 - **A populated `node_modules`** — `pnpm install` must run before the action so lifecycle scripts (`prepack` / `prepare` doing `pnpm build`, `tsdown`, etc.) can find their devDependencies.
 
 ## Security notes
@@ -134,10 +134,10 @@ jobs:
           node-version-file: .node-version
 
       - name: ⌛ Setup pnpm
-        uses: variableland/gh-actions/actions/setup-pnpm@main
+        uses: withvariablelab/gh-actions/actions/setup-pnpm@main
 
       - name: 🚀 Preview release
-        uses: variableland/gh-actions/actions/monorepo-preview-release@main
+        uses: withvariablelab/gh-actions/actions/monorepo-preview-release@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           npm_token: ${{ secrets.NPM_TOKEN }} # optional

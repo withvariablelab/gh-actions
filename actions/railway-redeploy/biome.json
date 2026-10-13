@@ -1,6 +1,6 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
-  "extends": ["@vlandoss/config/biome"],
+  "extends": ["@rrlab/biome-config"],
   "files": {
     "includes": ["**", "!dist"]
   }

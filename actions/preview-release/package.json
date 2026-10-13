@@ -1,5 +1,5 @@
 {
-  "name": "@vlandoss/preview-release",
+  "name": "@variablelab/preview-release",
   "version": "0.0.0",
   "private": true,
   "description": "Action to release a standalone library with a PR related tag",
@@ -16,9 +16,11 @@
     "tinyexec": "^0.3.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.4",
+    "@rrlab/biome-config": "0.0.2",
+    "@rrlab/ts-config": "0.0.2",
     "@types/node": "24.12.4",
     "@vercel/ncc": "^0.38.1",
-    "@vlandoss/config": "0.2.0",
     "typescript": "^5.6.0"
   }
 }

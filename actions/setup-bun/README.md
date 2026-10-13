@@ -10,5 +10,5 @@ GitHub Action that installs [Bun](https://bun.sh) pinned to the version declared
 
 ```yml
 - name: ⌛ Setup Bun
-  uses: variableland/gh-actions/actions/setup-bun@main
+  uses: withvariablelab/gh-actions/actions/setup-bun@main
 ```
