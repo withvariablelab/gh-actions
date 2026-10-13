@@ -1,4 +1,3 @@
-# Holds the bot key: never check out or run PR code here.
 name: Preview comment
 
 on:
@@ -20,6 +19,7 @@ on:
 permissions: {}
 
 jobs:
+  # Holds the bot key: never check out or run PR code here.
   comment:
     name: Comment preview
     runs-on: ubuntu-latest

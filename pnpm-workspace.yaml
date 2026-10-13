@@ -1,16 +1,4 @@
-# Root tooling only (@rrlab/cli, biome, typescript, lefthook). There is no
-# `packages:` list: the actions under actions/* are standalone npm projects
-# with their own package-lock.json, not pnpm workspace packages. `rr check` and
-# `rr tsc` still run per action with this file present (checked with
-# @rrlab/cli 1.3.0).
-#
-# Supply-chain cooldown: never resolve a third-party version
-# published less than 24 h ago (most malicious releases are pulled within the
-# hour). Our own scopes are exempt so fresh @variablelab/* and @rrlab/*
-# releases can be adopted right away. Requires pnpm >= 10.16.
-#
-# This does not cover the per-action npm installs. For those, see "Dependency
-# cooldown" in the README.
+# Root tooling only (no packages: actions/* are standalone npm projects); see "Dependency cooldown" in the README.
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "@variablelab/*"
