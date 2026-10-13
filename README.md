@@ -47,13 +47,13 @@ Every Node-based action in this monorepo follows the same shape:
 
 1. **`action.yml`** declares `runs.using: node24` and `main: dist/index.js`.
 2. **Source** lives in `src/`. The bundled output (`dist/index.js`) is committed to the repo and runs directly on the GitHub Actions runner — no Docker build, no install at runtime.
-3. **`mise.toml`** declares a `build` task that runs `ncc build src/index.ts -o dist`. Mise's incremental `sources`/`outputs` tracking skips the rebuild when nothing has changed.
-4. The **lefthook `pre-push` hook** runs `mise run build` for any push that touches `actions/*/src/**` and blocks the push if `dist/` is out of sync with `src/`.
-5. The CI workflow **`Check actions dist sync`** enforces the same invariant on every PR and is required by branch protection. Anyone who bypasses the local hook still gets caught here.
+3. **`mise.toml`** declares a `build` task that runs `ncc build src/index.ts -o dist`. Mise's incremental `sources`/`outputs` tracking skips the rebuild when nothing has changed, so `mise run build` does **not** catch a hand-edited `dist/`. The root **`check-dist`** task does: it force-rebuilds every `dist/` and fails if anything under `dist/` differs from the commit (including new files).
+4. The **lefthook `pre-push` hook** runs `mise run check-dist` for any push that touches an action's `src/`, `dist/`, `package.json`, `package-lock.json` or `tsconfig.json`, and blocks the push if `dist/` is out of sync with `src/`.
+5. The CI workflow **`Check actions dist sync`** runs `check-dist` on every PR (no `paths:` filter, so a PR that only edits `dist/` or `action.yml` is checked too). Its `verify` job is a required status check in the `main` ruleset. Anyone who bypasses the local hook still gets caught here.
 6. **Unit tests** live next to the code as `src/**/*.test.ts` and run with Node's built-in test runner (`node --test`, native type stripping, no extra dependencies): `mise run test` per action or at the root. The pre-push hook and `Check actions dist sync` run them too.
 7. `preview-release` and `monorepo-preview-release` carry **byte-identical copies** of the comment-mode code (`src/comment.ts`, `src/types.ts`) and the shared tests (`src/comment.test.ts`, `src/core.test.ts`). Change both copies together; CI diffs them.
 
-To add a new Node action, copy the structure of `monorepo-preview-release` or `railway-redeploy`, adjust inputs and logic, and run `mise run build` (or just `git push` — the hook will do it for you and tell you to commit the dist change).
+To add a new Node action, copy the structure of `monorepo-preview-release` or `railway-redeploy`, adjust inputs and logic, and run `mise run build` (or `mise run check-dist`, which the pre-push hook also runs and which tells you to commit the dist change).
 
 ## Security linting
 

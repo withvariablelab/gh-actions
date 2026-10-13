@@ -15,15 +15,10 @@ pre-push:
         - "actions/*/package.json"
 
     - name: verify action dist
-      run: |
-        mise run build
-        if ! git diff --exit-code 'actions/*/dist'; then
-          echo ""
-          echo "❌ One or more actions have dist/ out of sync with src/."
-          echo "   Run 'mise run build' and commit the result before pushing."
-          exit 1
-        fi
+      run: mise run check-dist
       glob:
         - "actions/*/src/**"
+        - "actions/*/dist/**"
         - "actions/*/package.json"
+        - "actions/*/package-lock.json"
         - "actions/*/tsconfig.json"

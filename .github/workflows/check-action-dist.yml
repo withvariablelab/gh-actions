@@ -1,15 +1,11 @@
 name: Check actions dist sync
 
+# No `paths:` filter on purpose. dist/ is the code every consumer runs at
+# @main (in jobs with id-token: write or a vland-bot token), so a PR that only
+# edits dist/index.js or action.yml must be checked too. It also lets `verify`
+# be a required status check: a path-skipped required check stays pending.
 on:
   pull_request:
-    paths:
-      - "actions/*/src/**"
-      - "actions/*/package.json"
-      - "actions/*/package-lock.json"
-      - "actions/*/tsconfig.json"
-      - "actions/*/mise.toml"
-      - "mise.toml"
-      - ".github/workflows/check-action-dist.yml"
 
 permissions:
   contents: read
@@ -46,13 +42,12 @@ jobs:
       - name: 🧪 Unit tests
         run: mise run test
 
-      - name: 🔨 Build all actions
-        run: mise run build
-
+      # Force-rebuilds every dist/ and diffs it against the commit (see the
+      # check-dist task in mise.toml). Only file names and a --stat are
+      # printed, never the PR-controlled file contents.
       - name: 🧪 Verify dist is in sync with src
         run: |
-          if ! git diff --exit-code 'actions/*/dist'; then
-            echo "::error::dist/ is out of sync with src/. Run 'mise run build' locally and commit the result."
-            git diff 'actions/*/dist' | head -200
+          if ! mise run check-dist; then
+            echo "::error::dist/ is out of sync with src/. Run 'mise run check-dist' locally and commit the rebuilt dist/."
             exit 1
           fi
