@@ -52,6 +52,31 @@ export function parsePublishMode(value: string): PublishMode | undefined {
   return value as PublishMode;
 }
 
+// What a run does:
+// - server: publish, then notify the vland-bot server (OIDC), which comments.
+// - publish: publish only and expose the result as step outputs.
+// - comment: no publish; upsert the PR comment from the `packages` input.
+export const ActionMode = {
+  SERVER: "server",
+  PUBLISH: "publish",
+  COMMENT: "comment",
+} as const;
+export type ActionMode = (typeof ActionMode)[keyof typeof ActionMode];
+
+export function parseActionMode(value: string): ActionMode {
+  if (!value) {
+    return ActionMode.SERVER;
+  }
+
+  const modes = Object.values(ActionMode);
+
+  if (!modes.includes(value as ActionMode)) {
+    throw new Error(`Invalid mode "${value}". Expected one of: ${modes.join(", ")}`);
+  }
+
+  return value as ActionMode;
+}
+
 async function bumpPackage(pkg: WorkspacePackage, preid: string): Promise<string> {
   // --no-git-checks: earlier bumps in the same run dirty the working tree,
   // and pnpm version refuses to run on an unclean tree by default

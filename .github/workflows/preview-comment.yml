@@ -1,0 +1,81 @@
+name: Preview comment
+
+# Second job of the two-job preview pattern (see actions/preview-release and
+# actions/monorepo-preview-release READMEs). The caller's `preview` job runs
+# the PR code and publishes with npm OIDC; this job never checks out or runs
+# PR code. It mints a vland-bot token and upserts the PR comment.
+#
+# Callers use it at job level, so they cannot add steps (such as a checkout)
+# to it:
+#
+#   preview-comment:
+#     needs: preview
+#     permissions: {}
+#     uses: withvariablelab/gh-actions/.github/workflows/preview-comment.yml@main
+#     with:
+#       action: monorepo-preview-release
+#       packages: ${{ needs.preview.outputs.packages }}
+#     secrets:
+#       VLAND_BOT_PRIVATE_KEY: ${{ secrets.VLAND_BOT_PRIVATE_KEY }}
+#
+# The GitHub App client ID comes from the caller's `VLAND_BOT_CLIENT_ID`
+# configuration variable: in a called workflow, `vars` resolves against the
+# caller's repository (and the org variables it can see).
+
+on:
+  workflow_call:
+    inputs:
+      packages:
+        description: "The `packages` output of the publish job (preview-release or monorepo-preview-release with `mode: publish`). Untrusted: the action validates it."
+        type: string
+        required: true
+      action:
+        description: "Action that renders the comment, matching the one the publish job used: `preview-release` or `monorepo-preview-release`."
+        type: string
+        required: true
+    secrets:
+      VLAND_BOT_PRIVATE_KEY:
+        description: Private key of the vland-bot GitHub App.
+        required: true
+
+permissions: {}
+
+jobs:
+  comment:
+    name: Comment preview release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: 🔍 Check inputs
+        if: ${{ inputs.action != 'preview-release' && inputs.action != 'monorepo-preview-release' }}
+        run: |
+          echo "::error::inputs.action must be 'preview-release' or 'monorepo-preview-release'"
+          exit 1
+
+      - name: 🔑 Create vland-bot token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.VLAND_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.VLAND_BOT_PRIVATE_KEY }}
+          # No owner/repositories: the token only covers the calling repo.
+          permission-pull-requests: write
+
+      - name: 💬 Comment (preview-release)
+        if: ${{ inputs.action == 'preview-release' }}
+        uses: withvariablelab/gh-actions/actions/preview-release@main
+        with:
+          mode: comment
+          packages: ${{ inputs.packages }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          app_slug: ${{ steps.app-token.outputs.app-slug }}
+
+      - name: 💬 Comment (monorepo-preview-release)
+        if: ${{ inputs.action == 'monorepo-preview-release' }}
+        uses: withvariablelab/gh-actions/actions/monorepo-preview-release@main
+        with:
+          mode: comment
+          packages: ${{ inputs.packages }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          app_slug: ${{ steps.app-token.outputs.app-slug }}

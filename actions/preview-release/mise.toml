@@ -14,6 +14,10 @@ run = 'rr tsc'
 [tasks."check"]
 run = 'rr check'
 
+[tasks.test]
+description = 'unit tests (node:test with native type stripping)'
+run = "node --test 'src/**/*.test.ts'"
+
 [tasks.build]
 description = 'bundle src into dist/ via ncc'
 sources = ["src/**/*", "package.json", "tsconfig.json"]
