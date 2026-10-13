@@ -57,7 +57,7 @@ To add a new Node action, copy the structure of `monorepo-preview-release` or `r
 
 ## Dependency cooldown
 
-New dependency versions must be at least 24 h old before they get in (Regla 5 of the migration plan). Most malicious releases are pulled within the first hour.
+New dependency versions must be at least 24 h old before they get in. Most malicious releases are pulled within the first hour.
 
 - **Root tooling** (pnpm): [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) sets `minimumReleaseAge: 1440`, excluding `@variablelab/*` and `@rrlab/*`. pnpm (>= 10.16, pinned in `package.json` and `mise.toml`) refuses a version that is too new with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
 - **Action dependencies** (npm, one `package-lock.json` per action): npm has no persistent cooldown setting. When you add or update a dependency of an action, pass `--before` with a timestamp 24 h in the past so npm resolves only versions published before it:
