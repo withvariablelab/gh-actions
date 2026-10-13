@@ -1,10 +1,4 @@
-# Workflow audit
-#
-# Scans every GitHub Actions workflow in .github/ with zizmor, a static
-# analyzer for CI security mistakes: untrusted input interpolated into
-# shell commands, credentials left behind by checkout, actions not pinned
-# to a commit SHA, overly broad permissions, dangerous triggers such as
-# pull_request_target. The check fails when a workflow introduces one.
+# Static security analysis of the GitHub Actions workflows (zizmor).
 # Config and reviewed exceptions: .github/zizmor.yml
 
 name: Workflow audit
@@ -29,11 +23,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # pipx ships with the GitHub-hosted Ubuntu image, so no third-party
-      # setup action is needed.
-      - name: 🔒 Scan .github/ for insecure workflow patterns
+      - name: 🔒 Run zizmor
         run: pipx run --spec zizmor==1.30.1 zizmor --format=github .
         env:
-          # Enables the online audits (impostor commits, known-vulnerable
-          # actions, ref confusion). Read-only: the job has contents: read.
+          # Read-only token for zizmor's online audits.
           GH_TOKEN: ${{ github.token }}

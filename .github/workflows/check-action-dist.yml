@@ -1,13 +1,8 @@
-# Runs on every pull request: unit-tests the actions and checks that each
-# committed dist/ matches a fresh build of its src/, so consumers running an
-# action at @main get the code that was reviewed.
+# Tests the actions and checks that the committed dist/ matches src/.
 
 name: Check actions dist sync
 
-# No `paths:` filter on purpose. dist/ is the code every consumer runs at
-# @main (in jobs with id-token: write or a vland-bot token), so a PR that only
-# edits dist/index.js or action.yml must be checked too. It also lets this job
-# be a required status check: a path-skipped required check stays pending.
+# No paths filter: dist/ is what consumers run, and a required check must always run.
 on:
   pull_request:
 
@@ -16,7 +11,7 @@ permissions:
 
 jobs:
   verify:
-    name: Test and check dist is up to date
+    name: Test and check dist
     runs-on: ubuntu-latest
     env:
       MISE_EXPERIMENTAL: "1"
@@ -26,31 +21,27 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 🛠️ Install mise and the pinned tools
+      - name: 🛠️ Setup mise
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
           install: true
           cache: true
           experimental: true
 
-      - name: 📦 Install root and per-action dependencies
+      - name: 📦 Install dependencies
         run: mise run setup
 
-      - name: 🪞 Check both preview actions share identical comment code
+      - name: 🪞 Check shared comment code
         run: |
-          # preview-release and monorepo-preview-release carry the same copy
-          # of the comment-mode code and its tests.
           for file in comment.ts comment.test.ts core.test.ts types.ts; do
             diff -u "actions/preview-release/src/$file" "actions/monorepo-preview-release/src/$file"
           done
 
-      - name: 🧪 Run unit tests
+      - name: 🧪 Test
         run: mise run test
 
-      # Force-rebuilds every dist/ and diffs it against the commit (see the
-      # check-dist task in mise.toml). Only file names and a --stat are
-      # printed, never the PR-controlled file contents.
-      - name: 🧪 Check dist/ matches a fresh build of src/
+      # Prints only file names and a --stat, never PR-controlled contents.
+      - name: 🧪 Check dist
         run: |
           if ! mise run check-dist; then
             echo "::error::dist/ is out of sync with src/. Run 'mise run check-dist' locally and commit the rebuilt dist/."
