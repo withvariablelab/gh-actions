@@ -12,14 +12,14 @@ importers:
         specifier: 2.4.4
         version: 2.4.4
       '@rrlab/biome-plugin':
-        specifier: 1.1.1
-        version: 1.1.1(@biomejs/biome@2.4.4)(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.0(@pnpm/logger@1001.0.1))
+        specifier: 1.1.3
+        version: 1.1.3(@biomejs/biome@2.4.4)(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.2(@pnpm/logger@1001.0.1))
       '@rrlab/cli':
-        specifier: 1.3.0
-        version: 1.3.0(@pnpm/logger@1001.0.1)
+        specifier: 1.3.2
+        version: 1.3.2(@pnpm/logger@1001.0.1)
       '@rrlab/ts-plugin':
-        specifier: 1.1.1
-        version: 1.1.1(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.0(@pnpm/logger@1001.0.1))(typescript@6.0.3)
+        specifier: 1.1.3
+        version: 1.1.3(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.2(@pnpm/logger@1001.0.1))(typescript@6.0.3)
       lefthook:
         specifier: 2.1.6
         version: 2.1.6
@@ -174,23 +174,23 @@ packages:
     resolution: {integrity: sha512-zG68fk03ryot7TWUl9S/ShQ91uHWzIL9sVr2aQCuNHJo8G9kjsG6S0p58Zj/voahdDQeakZYYBSJ0mjNZeiJnw==}
     engines: {node: '>=18.12'}
 
-  '@rrlab/biome-plugin@1.1.1':
-    resolution: {integrity: sha512-iSX0KfJPteJjp3lw0J7gSh1MBQsXVe8gG+T7oetoawXdzTCaFhzcjYYgRlwC0cNO1K9+oLsirpVboV/5MHU63w==}
+  '@rrlab/biome-plugin@1.1.3':
+    resolution: {integrity: sha512-ij1F2MKdH0CvV3kWzA01UaKnyi2jVEpqcePmNoJcHTVFlLuGkDfdQ5+2kl6849F9UmQcU47ixJe6VNss40RnJA==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@biomejs/biome': '>=2.0.0'
-      '@rrlab/cli': ^1.2.0
+      '@rrlab/cli': ^1.3.2
 
-  '@rrlab/cli@1.3.0':
-    resolution: {integrity: sha512-pxB957Qb7NRPAVNaWrFAR/WlSspPLbEBQZNlvranFeQh1FcxlC6bMyw2ebOrs6AiXdrGO8Zgksc0ud3Qf2XjVA==}
+  '@rrlab/cli@1.3.2':
+    resolution: {integrity: sha512-aKF5KF7bID4gaz8uGkfK6yOCoxE6Nbdf982GJ24qwDYl8X02BD12HCR54J1a4JuzynQJanzQNuCXUIBy6wSCJw==}
     engines: {node: '>=20.0.0'}
     hasBin: true
 
-  '@rrlab/ts-plugin@1.1.1':
-    resolution: {integrity: sha512-L4UvJclhgT4dt5BuDHeX5wxdY+upMbNzKj07yDARKSthMmIvnhPN6ETGSncII/OWH6Jyd0PjhUQwBrRK4iC/yw==}
+  '@rrlab/ts-plugin@1.1.3':
+    resolution: {integrity: sha512-nZ8uMWqr7UZ3+EBU2cBXGvaBIOQJQwQxkF7BmnjTpFNNuSyidFdzLQNjn+zkv1dt/TqKXAwtw2WxeKDXuZklFg==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@rrlab/cli': ^1.2.0
+      '@rrlab/cli': ^1.3.2
       typescript: '>=5.0.0'
 
   '@usage-spec/commander@1.1.0':
@@ -199,12 +199,12 @@ packages:
   '@usage-spec/core@1.1.0':
     resolution: {integrity: sha512-OjcN6IWdvuxN6bZYknTPIx9n/UTZODtGNaQEQe3yN7Y5DluH8/UJ8GeG+C0hNBWc/OePc0n9MmBw3rTbtoRVKg==}
 
-  '@vlandoss/clibuddy@0.7.1':
-    resolution: {integrity: sha512-bvHms0DJhwc+N7JlXxkTXHbioskwGyNAso/G3A+CNXSfGoHG50/jfjL5R07A4eBUidyWh4upQQ4lEeBKzpBiNQ==}
+  '@variablelab/clibuddy@0.7.3':
+    resolution: {integrity: sha512-DG18Hygr3y623IP7G4Fspgzjs2U8OyOHCtmfCf+Y10V23Jr6Ew50+RcoVtXFsYrisPm0BaM9r0LNV6tE2jAU0A==}
     engines: {node: '>=20.0.0'}
 
-  '@vlandoss/loggy@0.2.1':
-    resolution: {integrity: sha512-M/Lx4FTF54+EQalmGGKpsk52LzdHVS6s38JWzObMDJqZ8Odx3Q3US2kpTGeOZIWx/alCRucne+ud+zQIuzl9DA==}
+  '@variablelab/loggy@0.2.2':
+    resolution: {integrity: sha512-uqIaSjnHEg2SxsJqyPQ2GgTN3LBozh2dLEP4n6saGvz1yMUZl9DWhhZ7Tty6M73A4I9inSle/y267qXueZtQMg==}
     engines: {node: '>=20.0.0'}
 
   ansis@4.2.0:
@@ -679,21 +679,21 @@ snapshots:
       write-file-atomic: 5.0.1
       write-yaml-file: 5.0.0
 
-  '@rrlab/biome-plugin@1.1.1(@biomejs/biome@2.4.4)(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.0(@pnpm/logger@1001.0.1))':
+  '@rrlab/biome-plugin@1.1.3(@biomejs/biome@2.4.4)(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.2(@pnpm/logger@1001.0.1))':
     dependencies:
       '@biomejs/biome': 2.4.4
-      '@rrlab/cli': 1.3.0(@pnpm/logger@1001.0.1)
-      '@vlandoss/clibuddy': 0.7.1(@pnpm/logger@1001.0.1)
+      '@rrlab/cli': 1.3.2(@pnpm/logger@1001.0.1)
+      '@variablelab/clibuddy': 0.7.3(@pnpm/logger@1001.0.1)
       comment-json: 4.2.5
     transitivePeerDependencies:
       - '@pnpm/logger'
 
-  '@rrlab/cli@1.3.0(@pnpm/logger@1001.0.1)':
+  '@rrlab/cli@1.3.2(@pnpm/logger@1001.0.1)':
     dependencies:
       '@clack/prompts': 0.11.0
       '@usage-spec/commander': 1.1.0
-      '@vlandoss/clibuddy': 0.7.1(@pnpm/logger@1001.0.1)
-      '@vlandoss/loggy': 0.2.1
+      '@variablelab/clibuddy': 0.7.3(@pnpm/logger@1001.0.1)
+      '@variablelab/loggy': 0.2.2
       commander: 14.0.3
       comment-json: 4.2.5
       fast-string-width: 3.0.2
@@ -707,10 +707,10 @@ snapshots:
       - '@pnpm/logger'
       - supports-color
 
-  '@rrlab/ts-plugin@1.1.1(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.0(@pnpm/logger@1001.0.1))(typescript@6.0.3)':
+  '@rrlab/ts-plugin@1.1.3(@pnpm/logger@1001.0.1)(@rrlab/cli@1.3.2(@pnpm/logger@1001.0.1))(typescript@6.0.3)':
     dependencies:
-      '@rrlab/cli': 1.3.0(@pnpm/logger@1001.0.1)
-      '@vlandoss/clibuddy': 0.7.1(@pnpm/logger@1001.0.1)
+      '@rrlab/cli': 1.3.2(@pnpm/logger@1001.0.1)
+      '@variablelab/clibuddy': 0.7.3(@pnpm/logger@1001.0.1)
       comment-json: 4.2.5
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -725,7 +725,7 @@ snapshots:
     dependencies:
       '@bgotink/kdl': 0.4.0
 
-  '@vlandoss/clibuddy@0.7.1(@pnpm/logger@1001.0.1)':
+  '@variablelab/clibuddy@0.7.3(@pnpm/logger@1001.0.1)':
     dependencies:
       '@pnpm/fs.find-packages': 1000.0.24(@pnpm/logger@1001.0.1)
       '@pnpm/types': 1001.3.0
@@ -738,7 +738,7 @@ snapshots:
     transitivePeerDependencies:
       - '@pnpm/logger'
 
-  '@vlandoss/loggy@0.2.1':
+  '@variablelab/loggy@0.2.2':
     dependencies:
       consola: 3.4.2
       debug: 4.4.3
