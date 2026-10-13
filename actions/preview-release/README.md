@@ -109,8 +109,6 @@ If `preview` fails or is skipped, `needs` skips `preview-comment` too.
 ```yml
 - name: 🚀 Preview release
   uses: withvariablelab/gh-actions/actions/preview-release@main
-  with:
-    npm_token: ${{ secrets.NPM_TOKEN }} # optional, see "Authentication modes" below
 ```
 
 For `publish` + `comment`, see [Two-job previews](#two-job-previews).
