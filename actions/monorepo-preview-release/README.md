@@ -111,7 +111,6 @@ If `preview` fails or is skipped, `needs` skips `preview-comment` too.
   uses: withvariablelab/gh-actions/actions/monorepo-preview-release@main
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    npm_token: ${{ secrets.NPM_TOKEN }} # optional, see "Authentication modes" below
 ```
 
 For `publish` + `comment`, see [Two-job previews](#two-job-previews).
