@@ -41,6 +41,7 @@ try {
   if (mode === ActionMode.COMMENT) {
     // Runs in a job that never executes PR code: nothing is published here.
     const result = await runCommentMode({
+      appSlug: core.getInput("app_slug", { required: true }),
       eventName: github.context.eventName,
       workspaceDir: process.env.GITHUB_WORKSPACE,
       owner,

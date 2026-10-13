@@ -125,6 +125,7 @@ For `publish` + `comment`, see [Two-job previews](#two-job-previews).
 | `working_directory` | no | `.` | `server`/`publish` only. Directory containing the `package.json` to publish. Use this when the library lives in a subdirectory. |
 | `vland_bot_url` | no | `https://bot.variable.land` | `server` only. Base URL of the `vland-bot` server that receives the post-publish notification. |
 | `packages` | in `comment` | — | `comment` only. The `packages` output of a `publish` run (JSON). |
+| `app_slug` | in `comment` | — | `comment` only. Slug of the GitHub App behind `github_token` (`preview-comment.yml` passes the `app-slug` output of `actions/create-github-app-token`). Only a marker comment written by `<app_slug>[bot]` is updated. |
 | `github_token` | in `comment` | — | `comment` only. Token that can write PR comments (the `vland-bot` token minted by `preview-comment.yml`). |
 
 ## Outputs
@@ -210,5 +211,5 @@ In `server` and `publish` modes `pnpm publish` is invoked from inside the action
   - `GITHUB_WORKSPACE` is empty, i.e. nothing in the job checked out or wrote files (the reusable workflow has no checkout, and callers cannot add steps to it);
   - `packages` is valid JSON of at most 64 KiB and matches a strict schema: an array of at most 100 objects with exactly `packageName` (lowercase npm name, optionally scoped, at most 214 characters), `nextVersion` (semver) and an optional boolean `firstTime`. Anything else is rejected, and the error names only the failing fields, never the input itself.
 - The PR number and head SHA come from the event payload, not from the previous job. Package names and versions are rendered inside code spans, so they can't turn into links, mentions or markup.
-- When updating, only comments authored by a bot that carry the marker are considered, so a human comment quoting the marker is never edited.
+- When updating, only marker comments written by the app's own bot account (`<app_slug>[bot]`, a `Bot` user) are considered. A human or another bot (changeset-bot, github-actions…) that quotes the marker is never picked: the app token could not edit that comment, and the job would fail with a 403 on every run.
 - All runtime tokens (`github_token`, the npm auth token transiently written to `~/.npmrc`, and the `vland-bot` OIDC token) are registered with `core.setSecret` so accidental log echoes are masked by the runner. Tokens are never logged.

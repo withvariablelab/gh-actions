@@ -9,6 +9,7 @@ import { after, before, describe, it } from "node:test";
 import {
   assertCommentEvent,
   assertEmptyWorkspace,
+  botLoginFromAppSlug,
   buildCommentBody,
   COMMENT_TAG,
   type CommentOctokit,
@@ -20,6 +21,8 @@ import {
 } from "./comment.ts";
 
 const HEAD_SHA = "abc1234def5678abc1234def5678abc1234def56";
+
+const BOT_LOGIN = "vland-bot[bot]";
 
 type FakeComment = { id: number; body: string; user: { login: string; type: string } };
 
@@ -268,6 +271,19 @@ describe("assertEmptyWorkspace", () => {
   });
 });
 
+describe("botLoginFromAppSlug", () => {
+  it("maps an app slug to its bot login", () => {
+    assert.equal(botLoginFromAppSlug("vland-bot"), "vland-bot[bot]");
+    assert.equal(botLoginFromAppSlug("a1"), "a1[bot]");
+  });
+
+  it("rejects anything that is not an app slug", () => {
+    for (const slug of ["", "Vland-bot", "vland-bot[bot]", "-bot", "vland bot", "vland_bot", "a".repeat(101)]) {
+      assert.throws(() => botLoginFromAppSlug(slug), /Invalid "app_slug" input/, JSON.stringify(slug));
+    }
+  });
+});
+
 describe("upsertComment", () => {
   const target = { owner: "withvariablelab", repo: "dx", prNumber: 12 };
 
@@ -277,7 +293,7 @@ describe("upsertComment", () => {
       { id: 2, body: "unrelated bot comment", user: { login: "changeset-bot[bot]", type: "Bot" } },
     ]);
 
-    const result = await upsertComment(octokit, target, "new body");
+    const result = await upsertComment(octokit, target, "new body", BOT_LOGIN);
 
     assert.deepEqual(result, { action: "created", commentId: 4242 });
     assert.deepEqual(calls.paginate, [{ owner: "withvariablelab", repo: "dx", issue_number: 12, per_page: 100 }]);
@@ -291,7 +307,7 @@ describe("upsertComment", () => {
       { id: 77, body: `${COMMENT_TAG}\n### Preview release`, user: { login: "vland-bot[bot]", type: "Bot" } },
     ]);
 
-    const result = await upsertComment(octokit, target, "new body");
+    const result = await upsertComment(octokit, target, "new body", BOT_LOGIN);
 
     assert.deepEqual(result, { action: "updated", commentId: 77 });
     assert.deepEqual(calls.update, [{ owner: "withvariablelab", repo: "dx", comment_id: 77, body: "new body" }]);
@@ -303,11 +319,48 @@ describe("upsertComment", () => {
       { id: 5, body: `look: ${COMMENT_TAG}`, user: { login: "someone", type: "User" } },
     ]);
 
-    const result = await upsertComment(octokit, target, "new body");
+    const result = await upsertComment(octokit, target, "new body", BOT_LOGIN);
 
     assert.equal(result.action, "created");
     assert.deepEqual(calls.update, []);
     assert.equal(calls.create.length, 1);
+  });
+
+  it("ignores another bot's comment that quotes the marker", async () => {
+    const { octokit, calls } = createFakeOctokit([
+      { id: 6, body: `${COMMENT_TAG}\nquoted`, user: { login: "changeset-bot[bot]", type: "Bot" } },
+      { id: 7, body: `${COMMENT_TAG}\nquoted`, user: { login: "github-actions[bot]", type: "Bot" } },
+    ]);
+
+    const result = await upsertComment(octokit, target, "new body", BOT_LOGIN);
+
+    assert.deepEqual(result, { action: "created", commentId: 4242 });
+    assert.deepEqual(calls.update, []);
+    assert.equal(calls.create.length, 1);
+  });
+
+  it("updates our own comment even when another bot quoted the marker first", async () => {
+    const { octokit, calls } = createFakeOctokit([
+      { id: 6, body: `${COMMENT_TAG}\nquoted`, user: { login: "changeset-bot[bot]", type: "Bot" } },
+      { id: 77, body: `${COMMENT_TAG}\n### Preview release`, user: { login: "vland-bot[bot]", type: "Bot" } },
+    ]);
+
+    const result = await upsertComment(octokit, target, "new body", BOT_LOGIN);
+
+    assert.deepEqual(result, { action: "updated", commentId: 77 });
+    assert.deepEqual(calls.update, [{ owner: "withvariablelab", repo: "dx", comment_id: 77, body: "new body" }]);
+    assert.deepEqual(calls.create, []);
+  });
+
+  it("requires a Bot account, not just a matching login", async () => {
+    const { octokit, calls } = createFakeOctokit([
+      { id: 8, body: `${COMMENT_TAG}\n### Preview release`, user: { login: "vland-bot[bot]", type: "User" } },
+    ]);
+
+    const result = await upsertComment(octokit, target, "new body", BOT_LOGIN);
+
+    assert.equal(result.action, "created");
+    assert.deepEqual(calls.update, []);
   });
 });
 
@@ -330,6 +383,7 @@ describe("runCommentMode", () => {
   });
 
   const baseOptions = {
+    appSlug: "vland-bot",
     owner: "withvariablelab",
     repo: "theme-toggle",
     prNumber: 3,
@@ -379,6 +433,38 @@ describe("runCommentMode", () => {
       runCommentMode({ ...baseOptions, eventName: "workflow_run", workspaceDir: emptyWorkspace, getOctokit: () => octokit }),
       /refuses to run on `workflow_run`/,
     );
+    assert.equal(totalCalls(calls), 0);
+  });
+
+  it("updates the comment of the app named by appSlug", async () => {
+    const { octokit, calls } = createFakeOctokit([
+      { id: 9, body: `${COMMENT_TAG}\nold`, user: { login: "other-app[bot]", type: "Bot" } },
+      { id: 10, body: `${COMMENT_TAG}\nold`, user: { login: "vland-bot[bot]", type: "Bot" } },
+    ]);
+
+    const result = await runCommentMode({ ...baseOptions, workspaceDir: emptyWorkspace, getOctokit: () => octokit });
+
+    assert.deepEqual(result, { action: "updated", commentId: 10 });
+    assert.equal(calls.update.length, 1);
+  });
+
+  it("refuses an invalid app slug before touching the API", async () => {
+    let created = false;
+    const { octokit, calls } = createFakeOctokit();
+
+    await assert.rejects(
+      runCommentMode({
+        ...baseOptions,
+        appSlug: "vland-bot[bot]",
+        workspaceDir: emptyWorkspace,
+        getOctokit: () => {
+          created = true;
+          return octokit;
+        },
+      }),
+      /Invalid "app_slug" input/,
+    );
+    assert.equal(created, false);
     assert.equal(totalCalls(calls), 0);
   });
 

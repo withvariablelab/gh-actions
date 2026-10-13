@@ -43,6 +43,7 @@ try {
     core.setSecret(githubToken);
 
     const result = await runCommentMode({
+      appSlug: core.getInput("app_slug", { required: true }),
       eventName: github.context.eventName,
       workspaceDir: process.env.GITHUB_WORKSPACE,
       owner,

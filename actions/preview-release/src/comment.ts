@@ -40,6 +40,10 @@ export const PackagesSchema = z.array(PackageSchema).max(MAX_PACKAGES);
 
 export type PreviewPackage = z.infer<typeof PackageSchema>;
 
+// GitHub App slugs are lowercase letters, digits and hyphens (GitHub derives
+// them from the app name). The app's bot account logs in as `<slug>[bot]`.
+const APP_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,99}$/;
+
 // Events where the workflow runs with base-branch privileges on behalf of
 // untrusted code. The comment job has no reason to run on them.
 const FORBIDDEN_EVENTS = new Set(["pull_request_target", "workflow_run"]);
@@ -60,6 +64,15 @@ export type UpsertResult = {
   action: "created" | "updated";
   commentId: number;
 };
+
+// The comment is matched by its exact author, so the token's own app is the
+// only account whose comment can be picked for an update.
+export function botLoginFromAppSlug(appSlug: string): string {
+  if (!APP_SLUG_RE.test(appSlug)) {
+    throw new Error('Invalid "app_slug" input: expected a GitHub App slug (lowercase letters, digits and hyphens).');
+  }
+  return `${appSlug}[bot]`;
+}
 
 export function assertCommentEvent(eventName: string): void {
   if (FORBIDDEN_EVENTS.has(eventName)) {
@@ -182,10 +195,17 @@ export function buildCommentBody(params: { packages: PreviewPackage[]; prNumber:
   return lines.join("\n");
 }
 
-// Update the existing preview comment or create one. Only comments written by
-// a bot account count, so a human comment that quotes the marker is never
-// picked as the one to edit.
-export async function upsertComment(octokit: CommentOctokit, target: CommentTarget, body: string): Promise<UpsertResult> {
+// Update the existing preview comment or create one. Only a marker comment
+// written by `botLogin` (the bot account of the app whose token we hold) is
+// picked for an update. A human, or another bot such as changeset-bot, that
+// quotes the marker is ignored: the app token could not edit that comment
+// anyway, and trying would fail the job with a 403 on every run.
+export async function upsertComment(
+  octokit: CommentOctokit,
+  target: CommentTarget,
+  body: string,
+  botLogin: string,
+): Promise<UpsertResult> {
   const { owner, repo, prNumber } = target;
 
   const comments = await octokit.paginate(octokit.rest.issues.listComments, {
@@ -195,7 +215,9 @@ export async function upsertComment(octokit: CommentOctokit, target: CommentTarg
     per_page: 100,
   });
 
-  const existingComment = comments.find((comment) => comment.user?.type === "Bot" && comment.body?.includes(COMMENT_TAG));
+  const existingComment = comments.find(
+    (comment) => comment.user?.type === "Bot" && comment.user.login === botLogin && comment.body?.includes(COMMENT_TAG),
+  );
 
   if (existingComment) {
     await octokit.rest.issues.updateComment({
@@ -217,6 +239,7 @@ export async function upsertComment(octokit: CommentOctokit, target: CommentTarg
 }
 
 export type CommentModeOptions = CommentTarget & {
+  appSlug: string;
   eventName: string;
   workspaceDir: string | undefined;
   headSha: string;
@@ -228,10 +251,11 @@ export type CommentModeOptions = CommentTarget & {
 export async function runCommentMode(options: CommentModeOptions): Promise<UpsertResult> {
   assertCommentEvent(options.eventName);
   await assertEmptyWorkspace(options.workspaceDir);
+  const botLogin = botLoginFromAppSlug(options.appSlug);
 
   const packages = parsePackages(options.rawPackages);
   const body = buildCommentBody({ packages, prNumber: options.prNumber, headSha: options.headSha });
 
   const { owner, repo, prNumber } = options;
-  return upsertComment(options.getOctokit(), { owner, repo, prNumber }, body);
+  return upsertComment(options.getOctokit(), { owner, repo, prNumber }, body, botLogin);
 }

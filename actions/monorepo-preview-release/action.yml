@@ -29,6 +29,10 @@ inputs:
     description: "comment mode only (required there): the `packages` output of a publish-mode run. Untrusted; validated before use"
     required: false
 
+  app_slug:
+    description: "comment mode only (required there): slug of the GitHub App whose token is `github_token` (the `app-slug` output of actions/create-github-app-token). Only a marker comment by `<app_slug>[bot]` is updated"
+    required: false
+
 outputs:
   packages:
     description: "publish mode only: JSON array of { packageName, nextVersion, firstTime } for every published package (empty when nothing was published)"
