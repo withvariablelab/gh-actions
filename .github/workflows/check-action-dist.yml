@@ -1,5 +1,3 @@
-# Tests the actions and checks that the committed dist/ matches src/.
-
 name: Check actions dist sync
 
 # No paths filter: dist/ is what consumers run, and a required check must always run.
