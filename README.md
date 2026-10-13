@@ -55,6 +55,21 @@ Every Node-based action in this monorepo follows the same shape:
 
 To add a new Node action, copy the structure of `monorepo-preview-release` or `railway-redeploy`, adjust inputs and logic, and run `mise run build` (or `mise run check-dist`, which the pre-push hook also runs and which tells you to commit the dist change).
 
+## Dependency cooldown
+
+New dependency versions must be at least 24 h old before they get in (Regla 5 of the migration plan). Most malicious releases are pulled within the first hour.
+
+- **Root tooling** (pnpm): [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) sets `minimumReleaseAge: 1440`, excluding `@variablelab/*` and `@rrlab/*`. pnpm (>= 10.16, pinned in `package.json` and `mise.toml`) refuses a version that is too new with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
+- **Action dependencies** (npm, one `package-lock.json` per action): npm has no persistent cooldown setting. When you add or update a dependency of an action, pass `--before` with a timestamp 24 h in the past so npm resolves only versions published before it:
+
+  ```sh
+  cd actions/<action>
+  npm install <pkg>@<range> --before="$(node -p 'new Date(Date.now() - 864e5).toISOString()')"
+  ```
+
+  The same flag works with `npm update`. Then run `mise run check-dist` and commit the rebuilt `dist/` together with the lockfile.
+- **Global npm CLI** in `setup-pnpm` and `setup-pnpm-bun`: an exact version, bumped by hand to a release at least 24 h old (see the comment on the "Update npm" step).
+
 ## Security linting
 
 [`zizmor`](https://docs.zizmor.sh) audits the workflows and composite actions on every PR and on pushes to `main` ([`zizmor.yml`](./.github/workflows/zizmor.yml), config in [`.github/zizmor.yml`](./.github/zizmor.yml)). Third-party actions are pinned to a full commit SHA with the version in a comment; `withvariablelab/*` is allowed at a ref (`@main`). Run it locally with `uvx zizmor .` or `pipx run zizmor .`.
