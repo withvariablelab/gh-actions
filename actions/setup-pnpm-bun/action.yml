@@ -11,9 +11,20 @@ runs:
       with:
         run_install: false
 
+    # npm >= 11.5.1 is required for npm trusted publishing (OIDC) and the
+    # runner image ships an older one. The version is pinned exactly: this
+    # runs as root in jobs that hold id-token: write or a vland-bot token, so
+    # a floating `npm@11` would install any new 11.x on the next run with no
+    # cooldown. Bump it by hand, to a release that is at least 24 h old
+    # (`npm view npm time --json`), in setup-pnpm and setup-pnpm-bun together.
     - name: 📦 Update npm
       shell: bash
-      run: sudo npm install -g npm@11
+      run: | # zizmor: ignore[adhoc-packages] global npm CLI, exact version pinned on purpose (see the comment above)
+        if command -v sudo >/dev/null 2>&1; then
+          sudo npm install -g npm@11.21.0
+        else
+          npm install -g npm@11.21.0
+        fi
 
     - name: 🫙 Export pnpm store path
       id: pnpm-config

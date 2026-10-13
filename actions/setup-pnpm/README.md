@@ -3,7 +3,7 @@
 GitHub Action that prepares a pnpm-based workflow:
 
 - Installs [pnpm](https://pnpm.io) via `pnpm/action-setup`
-- Upgrades `npm` to v11
+- Upgrades `npm` to an exact, hand-bumped 11.x (currently `11.21.0`, required for npm trusted publishing)
 - Caches the pnpm store (keyed by month + `pnpm-lock.yaml` hash)
 - Runs `pnpm install --frozen-lockfile --prefer-offline`
 - Logs the resolved `pnpm` and `npm` versions
