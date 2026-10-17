@@ -1,6 +1,6 @@
 name: setup-pnpm
 
-description: Prepare PNPM, cache dependencies, and install dependencies
+description: "Deprecated: install node and pnpm with mise (jdx/mise-action) instead. Prepare PNPM, cache dependencies, and install dependencies"
 
 runs:
   using: composite

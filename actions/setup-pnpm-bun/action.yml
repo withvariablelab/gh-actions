@@ -1,6 +1,6 @@
 name: setup-pnpm-bun
 
-description: Prepare PNPM and Bun, cache dependencies, and install dependencies
+description: "Deprecated: install node, pnpm and bun with mise (jdx/mise-action) instead. Prepare PNPM and Bun, cache dependencies, and install dependencies"
 
 runs:
   using: composite
