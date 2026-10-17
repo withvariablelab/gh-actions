@@ -69,6 +69,7 @@ New dependency versions must be at least 24 h old before they get in. Most malic
 
   The same flag works with `npm update`. Then run `mise run check-dist` and commit the rebuilt `dist/` together with the lockfile.
 - **Global npm CLI** in `setup-pnpm` and `setup-pnpm-bun`: an exact version, bumped by hand to a release at least 24 h old (see the comment on the "Update npm" step). Both actions are deprecated in favor of mise, which uses the npm bundled with the locked Node.
+- **Security updates**: Dependabot ([`dependabot.yml`](./.github/dependabot.yml)) opens a PR for every new security alert in the root and in each action (version updates stay manual), and [`Dependency audit`](./.github/workflows/dependency-audit.yml) audits every lockfile each Monday, keeping an issue open while advisories remain. Dependabot does not rebuild `dist/`: on its PRs for an action, `Check actions dist sync` fails until someone runs `mise run check-dist` on the branch and pushes the rebuilt `dist/`.
 
 ## Security linting
 

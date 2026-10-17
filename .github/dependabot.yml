@@ -1,0 +1,37 @@
+# Dependabot security updates only. Version updates stay manual: open-pull-requests-limit: 0
+# turns them off, while security updates still open PRs for every new alert.
+# cooldown mirrors pnpm's minimumReleaseAge (24 h). GitHub applies it to version updates only,
+# so it does not delay security PRs: check the fixed version's age before merging one.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directories:
+      - "/"
+      - "/actions/monorepo-preview-release"
+      - "/actions/preview-release"
+      - "/actions/railway-redeploy"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    cooldown:
+      default-days: 1
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - "/actions/*"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    cooldown:
+      default-days: 1
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
