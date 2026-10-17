@@ -34,7 +34,7 @@ The action looks up the target service from `project_id` + `environment` + `serv
 
 ## Requirements
 
-Bun runtime — pair this step with [`setup-bun`](../setup-bun/README.md) (or [`setup-pnpm-bun`](../setup-pnpm-bun/README.md)) in the calling workflow.
+Bun runtime — pair this step with [`setup-bun`](../setup-bun/README.md) in the calling workflow.
 
 ## Example
 

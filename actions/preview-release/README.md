@@ -61,13 +61,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+      - name: 🛠️ Setup mise
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          node-version-file: .node-version
+          install: true
+          cache: true
 
-      - name: ⌛ Setup pnpm
-        uses: withvariablelab/gh-actions/actions/setup-pnpm@main
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: 🚀 Preview release
         id: preview
@@ -196,7 +197,7 @@ The mutating commands (`pnpm version`, `pnpm publish`) stream their combined out
 
 In `server` and `publish` modes `pnpm publish` is invoked from inside the action, so the caller's job needs:
 
-- **`pnpm` available in `PATH`** — easiest via [`withvariablelab/gh-actions/actions/setup-pnpm`](../setup-pnpm/README.md) or `corepack enable`.
+- **`pnpm` available in `PATH`** — install node and pnpm with mise through [`jdx/mise-action`](https://github.com/jdx/mise-action), as in the [two-job example](#two-job-previews) (see [Migrating to mise](../setup-pnpm/README.md#migrating-to-mise)).
 - **A populated `node_modules`** — `pnpm install` must run before the action so lifecycle scripts (`prepack` / `prepare` doing `pnpm build`, `tsdown`, etc.) can find their devDependencies.
 
 `comment` mode needs none of that: it runs in an empty job.

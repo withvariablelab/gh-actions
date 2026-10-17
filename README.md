@@ -9,9 +9,9 @@ Reusable GitHub Actions used across Variable Lab and Variable Land projects.
 | [`preview-release`](./actions/preview-release/README.md) | Publish a per-PR preview release of a standalone library (single package, not a workspace) to npm (OIDC-first, with optional `NPM_TOKEN` fallback). The PR comment comes from the [`vland-bot`](https://bot.variable.land) server (`mode: server`, default) or from a separate job that never runs PR code (`mode: publish` + `mode: comment`, see [`preview-comment`](#reusable-workflows)). |
 | [`monorepo-preview-release`](./actions/monorepo-preview-release/README.md) | Publish a per-PR preview release of changed packages in a pnpm monorepo to npm (OIDC-first, with optional `NPM_TOKEN` fallback). The PR comment comes from the [`vland-bot`](https://bot.variable.land) server (`mode: server`, default) or from a separate job that never runs PR code (`mode: publish` + `mode: comment`, see [`preview-comment`](#reusable-workflows)). |
 | [`railway-redeploy`](./actions/railway-redeploy/README.md) | Trigger a redeploy of a Railway service via the Railway GraphQL API. Resolves the target service from `project_id` + `environment` + `service_name`, so no service ID lookup is needed. |
-| [`setup-pnpm`](./actions/setup-pnpm/README.md) | Install pnpm, upgrade npm, cache the pnpm store, and install dependencies. |
+| [`setup-pnpm`](./actions/setup-pnpm/README.md) | **Deprecated:** install node and pnpm with mise instead ([migration](./actions/setup-pnpm/README.md#migrating-to-mise)). Install pnpm, upgrade npm, cache the pnpm store, and install dependencies. |
 | [`setup-bun`](./actions/setup-bun/README.md) | Install Bun pinned to the version in `.bun-version`. |
-| [`setup-pnpm-bun`](./actions/setup-pnpm-bun/README.md) | Combined `setup-pnpm` + `setup-bun` for workflows that need both runtimes. |
+| [`setup-pnpm-bun`](./actions/setup-pnpm-bun/README.md) | **Deprecated:** install node, pnpm and bun with mise instead ([migration](./actions/setup-pnpm/README.md#migrating-to-mise)). Combined `setup-pnpm` + `setup-bun` for workflows that need both runtimes. |
 
 ## Reusable workflows
 
@@ -68,7 +68,7 @@ New dependency versions must be at least 24 h old before they get in. Most malic
   ```
 
   The same flag works with `npm update`. Then run `mise run check-dist` and commit the rebuilt `dist/` together with the lockfile.
-- **Global npm CLI** in `setup-pnpm` and `setup-pnpm-bun`: an exact version, bumped by hand to a release at least 24 h old (see the comment on the "Update npm" step).
+- **Global npm CLI** in `setup-pnpm` and `setup-pnpm-bun`: an exact version, bumped by hand to a release at least 24 h old (see the comment on the "Update npm" step). Both actions are deprecated in favor of mise, which uses the npm bundled with the locked Node.
 
 ## Security linting
 
