@@ -16,4 +16,4 @@ gh-actions takes bug reports and fixes for its actions and its reusable workflow
 
 CI has to pass, and a maintainer squash-merges.
 
-A merge to `main` is the release. Callers that use `@main` run the new code on their next run, and callers that pin a SHA keep theirs.
+A merge to `main` is the release. Callers that use `@main` run the new code on their next run, and callers that pin an action to a SHA keep theirs. `preview-comment.yml` runs the actions at `@main`, so pinning the workflow to a SHA doesn't pin the comment code.
