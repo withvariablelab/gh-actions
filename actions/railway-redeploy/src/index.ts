@@ -165,41 +165,40 @@ async function main() {
     return `https://railway.com/project/${deployment.projectId}/service/${deployment.serviceId}?environmentId=${deployment.environmentId}`;
   }
 
-  try {
-    const envWithServices = await getEnviromentServices(environment);
+  const envWithServices = await getEnviromentServices(environment);
 
-    if (!envWithServices) {
-      throw new Error(`Environment "${environment}" not found`);
-    }
-
-    const serviceInstance = envWithServices.serviceInstances.edges.find((it) => eqString(it.node.serviceName, serviceName));
-
-    if (!serviceInstance) {
-      throw new Error(`Service "${serviceName}" not found in environment "${environment}"`);
-    }
-
-    const deployment = await getLastActiveOrSleepingOrFailedDeployment(serviceInstance.node.serviceId, envWithServices.id);
-
-    if (!deployment) {
-      throw new Error("No active, sleeping, or failed deployments found");
-    }
-
-    await deploymentRedeploy(deployment.id);
-
-    const serviceUrl = getServicePanelUrl(deployment);
-
-    core.info(`🚀 Deployment (ID: ${deployment.id}) redeploy launched: ${serviceUrl}`);
-
-    core.setOutput("service_url", serviceUrl);
-  } catch (error) {
-    const msg = "Failed to redeploy railway service";
-
-    if (error instanceof Error) {
-      core.setFailed(`🚨 ${msg}: ${error.message}`);
-    } else {
-      core.setFailed(`🚨 ${msg}`);
-    }
+  if (!envWithServices) {
+    throw new Error(`Environment "${environment}" not found`);
   }
+
+  const serviceInstance = envWithServices.serviceInstances.edges.find((it) => eqString(it.node.serviceName, serviceName));
+
+  if (!serviceInstance) {
+    throw new Error(`Service "${serviceName}" not found in environment "${environment}"`);
+  }
+
+  const deployment = await getLastActiveOrSleepingOrFailedDeployment(serviceInstance.node.serviceId, envWithServices.id);
+
+  if (!deployment) {
+    throw new Error("No active, sleeping, or failed deployments found");
+  }
+
+  await deploymentRedeploy(deployment.id);
+
+  const serviceUrl = getServicePanelUrl(deployment);
+
+  core.info(`🚀 Deployment (ID: ${deployment.id}) redeploy launched: ${serviceUrl}`);
+
+  core.setOutput("service_url", serviceUrl);
 }
 
-main();
+// The catch sits on the call so that everything main() throws, a missing input included, reaches setFailed.
+main().catch((error) => {
+  const msg = "Failed to redeploy railway service";
+
+  if (error instanceof Error) {
+    core.setFailed(`🚨 ${msg}: ${error.message}`);
+  } else {
+    core.setFailed(`🚨 ${msg}`);
+  }
+});
