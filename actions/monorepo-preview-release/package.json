@@ -2,7 +2,7 @@
   "name": "@variablelab/monorepo-preview-release",
   "version": "0.0.0",
   "private": true,
-  "description": "Action to release packages in a monorepo with a PR related tag",
+  "description": "Publishes a per-PR preview release of the changed packages in a pnpm workspace to npm, under the dist-tag pr-<n>.",
   "license": "MIT",
   "author": "rcrd <rcrd@variable.land>",
   "type": "module",

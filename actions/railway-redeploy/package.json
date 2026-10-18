@@ -2,7 +2,7 @@
   "name": "@variablelab/railway-redeploy",
   "version": "0.0.0",
   "private": true,
-  "description": "Action to trigger a redeploy of a railway service",
+  "description": "Redeploys a Railway service through the Railway GraphQL API.",
   "license": "MIT",
   "author": "rcrd <rcrd@variable.land>",
   "type": "module",
