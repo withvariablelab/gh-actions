@@ -43,7 +43,7 @@ Every Node action in this repository has the same shape:
 
 1. **`action.yml`** declares `runs.using: node24` and `main: dist/index.js`.
 2. **The source** is in `src/`. The bundle, `dist/index.js`, is committed to the repository and runs as is on the GitHub Actions runner: no Docker build, and no install at run time.
-3. **`mise.toml`** declares a `build` task that runs `ncc build src/index.ts -o dist`. mise tracks its `sources` and `outputs` and skips the build when nothing changed, so `mise run build` does **not** catch a hand-edited `dist/`. The root **`check-dist`** task does: it rebuilds every `dist/` with `--force`, and fails if anything under `dist/` differs from the commit, new files included.
+3. **`mise.toml`** declares a `build` task that bundles `src/index.ts` into `dist/` with ncc, minified and with the dependency licenses in `dist/licenses.txt`. mise tracks its `sources` and `outputs` and skips the build when nothing changed, so `mise run build` does **not** catch a hand-edited `dist/`. The root **`check-dist`** task does: it rebuilds every `dist/` with `--force`, and fails if anything under `dist/` differs from the commit, new files included.
 4. The **lefthook `pre-push` hook** runs `mise run check-dist` for any push that touches an action's `src/`, `dist/`, `package.json`, `package-lock.json` or `tsconfig.json`, and blocks the push when `dist/` is out of sync with `src/`.
 5. CI (Check actions dist sync) runs `check-dist` on every pull request. It is a required check, so a push that skips the local hook is still caught.
 6. **Unit tests** sit next to the code as `src/**/*.test.ts`, and run with Node's built-in test runner (`node --test`, with native type stripping and no extra dependencies): `mise run test` in an action or at the root. The pre-push hook and Check actions dist sync run them too.
@@ -56,7 +56,7 @@ To add a Node action, copy the structure of `monorepo-preview-release` or `railw
 A new dependency version has to be at least 24 hours old before it gets in. Most malicious releases are pulled within the first hour.
 
 - **Root tooling** (pnpm): [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) sets `minimumReleaseAge: 1440`, except for `@variablelab/*` and `@rrlab/*`. pnpm 10.16 or later, pinned in `package.json` and `mise.toml`, refuses a version that is too new with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
-- **Action dependencies** (npm, one `package-lock.json` per action): npm has no lasting cooldown setting. When you add or update a dependency of an action, pass `--before` with a time 24 hours in the past, so npm resolves only versions published before it:
+- **Action dependencies** (npm, one `package-lock.json` per action): npm 11.10 and later have a lasting cooldown, `min-release-age`, but the actions don't set it. When you add or update a dependency of an action, pass `--before` with a time 24 hours in the past, so npm resolves only versions published before it:
 
   ```sh
   cd actions/<action>
@@ -65,7 +65,7 @@ A new dependency version has to be at least 24 hours old before it gets in. Most
 
   The same flag works with `npm update`. Then run `mise run check-dist`, and commit the rebuilt `dist/` with the lockfile.
 - **The global npm CLI** in `setup-pnpm` and `setup-pnpm-bun`: an exact version, bumped by hand to a release at least 24 hours old (see the comment on the "Update npm" step). Both actions are deprecated in favor of mise, which uses the npm bundled with the locked Node.
-- **Security updates:** once security updates are on in the repository settings, Dependabot ([`dependabot.yml`](../.github/dependabot.yml)) opens a pull request for every new security alert, at the root and in each action. Version updates stay manual. [Dependency audit](../.github/workflows/dependency-audit.yml) audits every lockfile each Monday, and keeps an issue open while advisories remain. Dependabot doesn't rebuild `dist/`: on its pull requests for an action, Check actions dist sync fails until someone runs `mise run check-dist` on the branch and pushes the rebuilt `dist/`. Its pull requests also skip the 24-hour cooldown, because GitHub ignores `cooldown` for security updates and Dependabot runs pnpm with `minimumReleaseAge=0`. Check the fixed version's publish date before you merge one.
+- **Security updates:** Dependabot security updates are on in the repository settings, and [`dependabot.yml`](../.github/dependabot.yml) groups them, so Dependabot opens grouped pull requests for the security alerts at the root and in each action, not one pull request per alert. Version updates stay manual. [Dependency audit](../.github/workflows/dependency-audit.yml) audits every lockfile each Monday, and keeps an issue open while advisories remain. Dependabot doesn't rebuild `dist/`: on its pull requests for an action, Check actions dist sync fails until someone runs `mise run check-dist` on the branch and pushes the rebuilt `dist/`. Its pull requests also skip the 24-hour cooldown, because GitHub ignores `cooldown` for security updates and Dependabot runs pnpm with `minimumReleaseAge=0`. Check the fixed version's publish date before you merge one.
 
 ## Security linting
 
