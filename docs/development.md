@@ -13,7 +13,7 @@ How to work on gh-actions in a clone. The [contributing guide](contributing.md) 
 [mise](https://mise.jdx.dev) pins Node 24 and pnpm 10.30.3 in `mise.toml`, which needs mise 2026.6.6 or later. The repository has no `mise.lock`. `mise.toml` makes the root a mise monorepo with each folder in `actions/` as a config root, so a task run at the root runs in every action that declares it. It also puts `node_modules/.bin` on the `PATH`, so the tools run by name.
 
 ```sh
-mise run setup         # mise install, pnpm install at the root, then npm install in each Node action
+mise run setup         # mise install, pnpm install, then npm install in each Node action
 pnpm lefthook install  # the git hooks, once per clone
 ```
 
