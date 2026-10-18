@@ -1,34 +1,38 @@
-# Monorepo preview release
+# monorepo-preview-release
 
-GitHub Action that publishes a **per-PR preview release** of every changed package in a pnpm workspace and gets a sticky comment posted on the pull request with the published versions.
-
-For each PR:
-
-- The packages changed by the PR (and their workspace dependents) are detected via the GitHub PR files API.
-- Each package gets its version bumped to `<current>-git-<short-sha>` (prerelease).
-- Each package is published to npm under the dist-tag `pr-<pr-number>`.
-- Private packages (`"private": true`) are excluded.
-- A package's **first ever publish** is a special case: npm force-assigns the `latest` dist-tag to it (and won't let that tag be removed), so the preview becomes the default `pnpm add <pkg>` target until a stable release re-points `latest`. The action flags these first-time publishes so the PR comment can warn about it. See [First-time publishes & `latest`](#first-time-publishes--latest).
-- The PR comment is posted either by the `vland-bot` server (`mode: server`, the default) or by a second job that never runs PR code (`mode: publish` + `mode: comment`). See [Modes](#modes).
+This action publishes a **per-PR preview release** of every changed package in a pnpm workspace, and gets a sticky comment with the published versions posted on the pull request.
 
 ## Modes
 
-The `mode` input picks what a run does:
+The PR comment is posted either by the `vland-bot` server (`mode: server`, the default) or by a second job that never runs PR code (`mode: publish` and `mode: comment`). The `mode` input picks what a run does:
 
 | `mode` | Publishes | Comments | Use it for |
 | --- | --- | --- | --- |
-| `server` (default) | yes | via the `vland-bot` server: the action POSTs the result, authenticated with a GitHub OIDC token (audience `vland-bot`) | variableland repos. This is the behaviour from before modes existed. |
-| `publish` | yes | no. Sets the [`packages`, `pr-number` and `head-sha` outputs](#outputs) instead | Job 1 of the [two-job pattern](#two-job-previews) |
-| `comment` | no | yes, directly: upserts the comment with `github_token` | Job 2 of the two-job pattern, through the [`preview-comment` reusable workflow](../../.github/workflows/preview-comment.yml) |
+| `server` (default) | yes | Through the `vland-bot` server: the action POSTs the result, authenticated with a GitHub OIDC token (audience `vland-bot`). | Repos that let the `vland-bot` server post the comment. It is the behavior from before modes existed. |
+| `publish` | yes | No. It sets the [`packages`, `pr-number` and `head-sha` outputs](#outputs) instead. | Job 1 of the [two-job pattern](#two-job-previews). |
+| `comment` | no | Yes, directly: it upserts the comment with `github_token`. | Job 2 of the two-job pattern, through the [`preview-comment` reusable workflow](../../.github/workflows/preview-comment.yml). |
 
-## Two-job previews
+## Usage
 
-The `vland-bot` server exists so the bot's private key is never in a job that runs PR code (the preview job installs and builds the PR). The two-job pattern keeps that property without the server:
+`mode: server`, the default, needs only the step and `github_token`:
 
-1. **`preview`** runs the PR code and publishes with npm OIDC (`mode: publish`). It has `id-token: write` and `contents: read`, no app key, and only hands the published package list to the next job as an output.
-2. **`preview-comment`** (`needs: preview`) calls the reusable workflow [`preview-comment.yml`](../../.github/workflows/preview-comment.yml). That workflow never checks out or runs PR code: it mints a `vland-bot` installation token (current repo only, `pull-requests: write`) and runs this action with `mode: comment`, which validates the package list and upserts the comment.
+```yml
+- name: 🚀 Preview release
+  uses: withvariablelab/gh-actions/actions/monorepo-preview-release@main
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
 
-The comment has the same layout and the same `<!-- preview-release-bot -->` marker as the one the server posts, and it is posted by the same `vland-bot` app, so job 2 updates comments the server created earlier.
+For `publish` and `comment`, see [Two-job previews](#two-job-previews).
+
+### Two-job previews
+
+The `vland-bot` server exists so the bot's private key is never in a job that runs PR code: the preview job installs and builds the PR. The two-job pattern keeps that property without the server:
+
+1. **`preview`** runs the PR code and publishes with npm OIDC (`mode: publish`). It has `id-token: write` and `contents: read`, no app key, and only hands the published package list to the next job, as an output.
+2. **`preview-comment`** (`needs: preview`) calls the reusable workflow [`preview-comment.yml`](../../.github/workflows/preview-comment.yml). That workflow never checks out or runs PR code: it mints a `vland-bot` installation token, for the current repo only and with `pull-requests: write`, and runs this action with `mode: comment`, which validates the package list and upserts the comment.
+
+The comment has the same layout and the same `<!-- preview-release-bot -->` marker as the one the server posts, and the same `vland-bot` app posts it, so job 2 updates comments the server created earlier.
 
 ```yml
 name: CI
@@ -90,9 +94,9 @@ jobs:
 
 What the caller needs:
 
-- The org (or repo) **variable** `VLAND_BOT_CLIENT_ID` and **secret** `VLAND_BOT_PRIVATE_KEY`. The reusable workflow reads `vars.VLAND_BOT_CLIENT_ID` itself: in a called workflow, `vars` resolves against the caller's repository. The secret is passed explicitly (no `secrets: inherit`).
+- The org or repo **variable** `VLAND_BOT_CLIENT_ID` and **secret** `VLAND_BOT_PRIVATE_KEY`. The reusable workflow reads `vars.VLAND_BOT_CLIENT_ID` itself: in a called workflow, `vars` resolves against the caller's repository. The secret is passed explicitly, with no `secrets: inherit`.
 - `vland-bot` installed on the repository.
-- `packages` travels **only** through `outputs:` and `with:`. Never interpolate `needs.preview.outputs.packages` (or any other output of the preview job) into a `run:` script: that job ran PR code, so its outputs are untrusted and would be a script injection.
+- `packages` travels **only** through `outputs:` and `with:`. Never interpolate `needs.preview.outputs.packages`, or any other output of the preview job, into a `run:` script: that job ran PR code, so its outputs are untrusted and would be a script injection.
 
 `preview-comment.yml` inputs:
 
@@ -103,52 +107,46 @@ What the caller needs:
 
 If `preview` fails or is skipped, `needs` skips `preview-comment` too.
 
-## Usage
-
-`mode: server` (default), as used by variableland repos:
-
-```yml
-- name: 🚀 Preview release
-  uses: withvariablelab/gh-actions/actions/monorepo-preview-release@main
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-For `publish` + `comment`, see [Two-job previews](#two-job-previews).
-
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `mode` | no | `server` | `server`, `publish` or `comment`. See [Modes](#modes). |
-| `github_token` | yes | — | `server`/`publish`: token for the GitHub API (typically `${{ secrets.GITHUB_TOKEN }}`), used to list the PR's changed files. `comment`: token that can write PR comments (the `vland-bot` token minted by `preview-comment.yml`). |
-| `npm_token` | no | — | `server`/`publish` only. npm classic/automation token. When set, enables the OIDC + token fallback mode (see below). |
-| `publish_mode` | no | auto-detected | `server`/`publish` only. Override the [authentication mode](#authentication-modes): `token-only`, `oidc-only` or `oidc-with-token-fallback`. |
-| `vland_bot_url` | no | `https://bot.variable.land` | `server` only. Base URL of the `vland-bot` server that receives the post-publish notification. |
-| `packages` | in `comment` | — | `comment` only. The `packages` output of a `publish` run (JSON). |
-| `app_slug` | in `comment` | — | `comment` only. Slug of the GitHub App behind `github_token` (`preview-comment.yml` passes the `app-slug` output of `actions/create-github-app-token`). Only a marker comment written by `<app_slug>[bot]` is updated. |
+| `github_token` | yes | — | `server` and `publish`: a token for the GitHub API, usually `${{ secrets.GITHUB_TOKEN }}`, to list the PR's changed files. `comment`: a token that can write PR comments, the `vland-bot` token that `preview-comment.yml` mints. |
+| `npm_token` | no | — | `server` and `publish` only. An npm classic or automation token. When set, it turns on the OIDC and token fallback mode (see [Authentication modes](#authentication-modes)). |
+| `publish_mode` | no | detected | `server` and `publish` only. Overrides the [authentication mode](#authentication-modes): `token-only`, `oidc-only` or `oidc-with-token-fallback`. |
+| `vland_bot_url` | no | `https://bot.variable.land` | `server` only. The base URL of the `vland-bot` server that gets the notification after the publish. |
+| `packages` | in `comment` | — | `comment` only. The `packages` output of a `publish` run, as JSON. |
+| `app_slug` | in `comment` | — | `comment` only. The slug of the GitHub App behind `github_token` (`preview-comment.yml` passes the `app-slug` output of `actions/create-github-app-token`). Only a marker comment written by `<app_slug>[bot]` is updated. |
 
 ## Outputs
 
 Set in `mode: publish` only:
 
-| Output | Description |
-| --- | --- |
-| `packages` | JSON array with one entry per published package (`[]` when nothing changed). Fields below. |
-| `pr-number` | Number of the pull request. |
-| `head-sha` | Head commit SHA of the pull request. |
+- `packages`: a JSON array with one entry per published package, or `[]` when nothing changed. Its fields are below.
+- `pr-number`: the number of the pull request.
+- `head-sha`: the head commit SHA of the pull request.
 
-Each `packages` entry (the same payload `mode: server` POSTs to `vland-bot` at `POST <vland_bot_url>/v1/github/preview-release`):
+Each `packages` entry is the same payload that `mode: server` POSTs to `vland-bot` at `POST <vland_bot_url>/v1/github/preview-release`:
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `packageName` | `string` | The npm package name. |
 | `nextVersion` | `string` | The published preview version (`<current>-git-<short-sha>`). |
-| `firstTime` | `boolean` | `true` when this run published the package's very first version. npm makes that version `latest` (unavoidably — see below), so the comment warns that `pnpm add <pkg>` currently resolves to a preview build until a stable release re-points `latest`. |
+| `firstTime` | `boolean` | `true` when this run published the package's first version ever. npm makes that version `latest`, and nothing can prevent it (see [First-time publishes & `latest`](#first-time-publishes--latest)), so the comment warns that `pnpm add <pkg>` resolves to a preview build until a stable release moves `latest`. |
+
+## Requirements
+
+In `server` and `publish` modes, the action runs `pnpm publish` itself, so the caller's job needs:
+
+- **`pnpm` on the `PATH`.** Install node and pnpm with mise through [`jdx/mise-action`](https://github.com/jdx/mise-action), as in the [two-job example](#two-job-previews). See [Migrating to mise](../setup-pnpm/README.md#migrating-to-mise).
+- **A populated `node_modules`.** `pnpm install` has to run before the action, so lifecycle scripts (`prepack` or `prepare` running `pnpm build`, `tsdown` and the like) find their devDependencies.
+
+`comment` mode needs none of that: it runs in an empty job.
 
 ## Required permissions
 
-`server` and `publish` (the job that runs the PR code):
+`server` and `publish`, in the job that runs the PR code:
 
 ```yml
 permissions:
@@ -158,59 +156,56 @@ permissions:
 
 `comment`: none from `GITHUB_TOKEN` (`permissions: {}`). It uses the app token passed as `github_token`, which needs `pull-requests: write` on the current repository.
 
+## What a run publishes
+
+- The packages the PR changes, and their workspace dependents, are found through the GitHub API's list of the PR's files.
+- Each package gets its version bumped to the prerelease `<current>-git-<short-sha>`.
+- Each package is published to npm under the dist-tag `pr-<pr-number>`.
+- Private packages (`"private": true`) are left out.
+- A package's **first publish ever** is a special case. npm gives it the `latest` dist-tag and won't let that tag be removed, so the preview becomes the default `pnpm add <pkg>` target until a stable release moves `latest`. The action flags these first publishes, so the PR comment can warn about it. See [First-time publishes & `latest`](#first-time-publishes--latest).
+
 ## Authentication modes
 
-`server` and `publish` pick one of three npm publishing modes automatically based on the workspace state and the inputs (override with `publish_mode`):
+`server` and `publish` pick one of three npm publishing modes from the workspace's state and the inputs. `publish_mode` overrides the choice.
 
-| Detected state | Mode | Behavior |
-| --- | --- | --- |
-| `.npmrc` already provides auth | `token-only` | Publishes using the existing `.npmrc` credentials. Never adds `--provenance`. |
-| `npm_token` input is provided (and no `.npmrc` auth) | `oidc-with-token-fallback` | Publishes each package with OIDC + provenance via `pnpm publish --provenance`. If a given package's publish fails **and** the package is unpublished on npm, it falls back to `NPM_TOKEN` auth without provenance. |
-| Neither of the above | `oidc-only` | Publishes with OIDC + provenance. Any failure is fatal. |
+- **`token-only`**, when `.npmrc` already provides auth: publishes with the existing `.npmrc` credentials, and never adds `--provenance`.
+- **`oidc-with-token-fallback`**, when the `npm_token` input is set and `.npmrc` has no auth: publishes each package with OIDC and provenance through `pnpm publish --provenance`. If a package's publish fails **and** that package has never been published to npm, it falls back to `NPM_TOKEN` auth without provenance.
+- **`oidc-only`**, in every other case: publishes with OIDC and provenance. Any failure is fatal.
 
-The `oidc-with-token-fallback` mode exists to handle **first-time publishes** of packages that don't yet have a Trusted Publisher configured on npm: those land via the token (no provenance), while every other package keeps its provenance attestation.
+The `oidc-with-token-fallback` mode exists for the **first publishes** of packages that have no Trusted Publisher on npm yet: those land through the token, without provenance, and every other package keeps its provenance attestation.
 
 ## First-time publishes & `latest`
 
-npm requires every package to always have a `latest` dist-tag, so the **first** version ever published becomes `latest` — even when `pnpm publish --tag pr-<n>` is used. There is no way around this: npm rejects any attempt to delete the `latest` tag (`npm dist-tag rm <pkg> latest` returns `400 Bad Request`), and a package cannot exist without one.
+npm requires every package to have a `latest` dist-tag at all times, so the **first** version ever published becomes `latest`, even with `pnpm publish --tag pr-<n>`. There is no way around it: npm rejects any attempt to delete the `latest` tag (`npm dist-tag rm <pkg> latest` returns `400 Bad Request`), and a package can't exist without one.
 
-So for a brand-new package, the first PR preview unavoidably becomes the version that `pnpm add <pkg>` (no tag) resolves to, until a stable release re-points `latest`.
+So for a new package, the first PR preview becomes the version that `pnpm add <pkg>`, with no tag, resolves to, until a stable release moves `latest`.
 
-The action does not try to fix this at the registry (it can't). Instead it detects first-time publishes and reports `firstTime: true`, and the PR comment marks those packages with `†` and a footnote. Each published preview stays installable by tag or exact version:
+The action doesn't try to fix this at the registry, because it can't. It detects first publishes and reports `firstTime: true`, and the PR comment marks those packages with `†` and a footnote. Each published preview stays installable by tag or by exact version:
 
-- `pnpm add <pkg>@pr-<n>` — by PR tag.
-- `pnpm add <pkg>@<version>` — by exact `<current>-git-<short-sha>` version.
+- `pnpm add <pkg>@pr-<n>`, by the PR's tag.
+- `pnpm add <pkg>@<version>`, by the exact `<current>-git-<short-sha>` version.
 
-The fix is to cut a real release: the normal release pipeline publishes a stable version and re-points `latest` to it.
+The fix is a real release: the normal release pipeline publishes a stable version and moves `latest` to it.
 
 ## How publishing works
 
-The action shells out to the real `pnpm` CLI for the heavy lifting:
+The action runs the real `pnpm` CLI for the work:
 
-- `pnpm list -r --json --depth 0` to enumerate the workspace.
+- `pnpm list -r --json --depth 0` to list the workspace.
 - `pnpm version prerelease --preid git-<sha> --no-git-tag-version` to bump.
 - `pnpm publish --tag pr-<n> --no-git-checks [--provenance]` to publish.
 
-`pnpm publish` takes care of `workspace:*` and `catalog:` resolution, `publishConfig` overrides, lifecycle scripts (`prepublishOnly`, `prepack`, `prepare`), and the npm Trusted Publisher OIDC exchange. This action just orchestrates which packages get bumped and the auth-mode selection.
+`pnpm publish` handles `workspace:*` and `catalog:` resolution, `publishConfig` overrides, lifecycle scripts (`prepublishOnly`, `prepack`, `prepare`) and the npm Trusted Publisher OIDC exchange. The action only picks which packages get bumped, and the auth mode.
 
-The mutating commands (`pnpm version`, `pnpm publish`) stream their combined output to the Actions log inside collapsible groups, so a run's progress is visible. The JSON query commands (`pnpm list`, `pnpm view`) stay silent — their output is parsed, not displayed.
-
-## Requirements on the calling workflow
-
-In `server` and `publish` modes `pnpm publish` is invoked from inside the action, so the caller's job needs:
-
-- **`pnpm` available in `PATH`** — install node and pnpm with mise through [`jdx/mise-action`](https://github.com/jdx/mise-action), as in the [two-job example](#two-job-previews) (see [Migrating to mise](../setup-pnpm/README.md#migrating-to-mise)).
-- **A populated `node_modules`** — `pnpm install` must run before the action so lifecycle scripts (`prepack` / `prepare` doing `pnpm build`, `tsdown`, etc.) can find their devDependencies.
-
-`comment` mode needs none of that: it runs in an empty job.
+The commands that change things (`pnpm version`, `pnpm publish`) stream their combined output to the Actions log inside collapsible groups, so a run's progress shows. The JSON query commands (`pnpm list`, `pnpm view`) stay silent: their output is parsed, not shown.
 
 ## Security notes
 
-- The action **refuses to run on `pull_request_target`** in every mode. That trigger gives the workflow access to base-branch secrets while letting it check out PR-controlled code, which combined with lifecycle scripts in `prepack`/`prepare` would let any PR exfiltrate the publish credentials. Use `on: pull_request` — GitHub strips secrets for fork PRs there.
-- `comment` mode treats `packages` as untrusted (it comes from a job that ran PR code) and refuses to run unless:
+- The action **refuses to run on `pull_request_target`**, in every mode. That trigger gives the workflow the base branch's secrets while it checks out PR code, and with lifecycle scripts in `prepack` or `prepare`, any PR could take the publish credentials. Use `on: pull_request`, where GitHub strips secrets for PRs from forks.
+- `comment` mode treats `packages` as untrusted, because it comes from a job that ran PR code, and refuses to run unless:
   - the event is not `pull_request_target` or `workflow_run`;
-  - `GITHUB_WORKSPACE` is empty, i.e. nothing in the job checked out or wrote files (the reusable workflow has no checkout, and callers cannot add steps to it);
-  - `packages` is valid JSON of at most 64 KiB and matches a strict schema: an array of at most 100 objects with exactly `packageName` (lowercase npm name, optionally scoped, at most 214 characters), `nextVersion` (semver) and an optional boolean `firstTime`. Anything else is rejected, and the error names only the failing fields, never the input itself.
-- The PR number and head SHA come from the event payload, not from the previous job. Package names and versions are rendered inside code spans, so they can't turn into links, mentions or markup.
-- When updating, only marker comments written by the app's own bot account (`<app_slug>[bot]`, a `Bot` user) are considered. A human or another bot (changeset-bot, github-actions…) that quotes the marker is never picked: the app token could not edit that comment, and the job would fail with a 403 on every run.
-- All runtime tokens (`github_token`, the npm auth token transiently written to `~/.npmrc`, and the `vland-bot` OIDC token) are registered with `core.setSecret` so accidental log echoes are masked by the runner. Tokens are never logged.
+  - `GITHUB_WORKSPACE` is empty, so nothing in the job checked out or wrote files (the reusable workflow has no checkout, and callers can't add steps to it);
+  - `packages` is valid JSON of at most 64 KiB and matches a strict schema: an array of at most 100 objects with exactly `packageName` (a lowercase npm name, scoped or not, of at most 214 characters), `nextVersion` (semver) and an optional boolean `firstTime`. Anything else is rejected, and the error names only the fields that failed, never the input itself.
+- The PR number and the head SHA come from the event payload, not from the previous job. Package names and versions are rendered inside code spans, so they can't turn into links, mentions or markup.
+- When updating, only marker comments written by the app's own bot account (`<app_slug>[bot]`, a `Bot` user) count. A person or another bot (changeset-bot, github-actions and others) that quotes the marker is never picked: the app token couldn't edit that comment, and the job would fail with a 403 on every run.
+- Every runtime token (`github_token`, the npm auth token written to `~/.npmrc` for the publish, and the `vland-bot` OIDC token) is registered with `core.setSecret`, so the runner masks it if a log echoes it by accident. Tokens are never logged.

@@ -1,4 +1,4 @@
-# Root tooling only (no packages: actions/* are standalone npm projects); see "Dependency cooldown" in the README.
+# Root tooling only (no packages: actions/* are standalone npm projects); see "Dependency cooldown" in docs/development.md.
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "@variablelab/*"

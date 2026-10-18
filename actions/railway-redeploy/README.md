@@ -1,8 +1,6 @@
-# Railway redeploy
+# railway-redeploy
 
-GitHub Action that triggers a redeploy of a Railway service via the Railway GraphQL API.
-
-The action looks up the target service from `project_id` + `environment` + `service_name`, finds the most recent deployment in `SUCCESS`, `SLEEPING`, or `FAILED` state that is marked `canRedeploy`, and calls the `deploymentRedeploy` mutation. It returns the Railway panel URL of the redeployed service as an output, and (because failed deployments are eligible) it can be used to retry a broken deploy without having to push a new commit.
+This action redeploys a Railway service through the Railway GraphQL API, and returns the service's URL in the Railway panel.
 
 ## Usage
 
@@ -20,26 +18,26 @@ The action looks up the target service from `project_id` + `environment` + `serv
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
-| `project_id` | yes | — | Railway project ID where the service lives. |
-| `environment` | yes | — | Environment name (case-insensitive), e.g. `staging`, `production`. |
-| `service_name` | yes | — | Service name as shown in the Railway dashboard (case-insensitive). No service ID is needed. |
-| `api_token` | yes | — | Railway account or workspace token with access to the project. Project tokens don't work: the action sends `Authorization: Bearer`, and Railway expects project tokens in a `Project-Access-Token` header. |
-| `api_url` | no | `https://backboard.railway.com/graphql/v2` | Override only if you target a non-standard Railway endpoint. |
+| `project_id` | yes | — | The ID of the Railway project the service is in. |
+| `environment` | yes | — | The environment's name, such as `staging` or `production`. Case doesn't matter. |
+| `service_name` | yes | — | The service's name as the Railway dashboard shows it. Case doesn't matter, and no service ID is needed. |
+| `api_token` | yes | — | A Railway account or workspace token with access to the project. Project tokens don't work: the action sends `Authorization: Bearer`, and Railway expects a project token in a `Project-Access-Token` header. |
+| `api_url` | no | `https://backboard.railway.com/graphql/v2` | Change it only to target a non-standard Railway endpoint. |
 
 ## Outputs
 
 | Output | Description |
 | --- | --- |
-| `service_url` | URL of the redeployed service in the Railway panel (`https://railway.com/project/<projectId>/service/<serviceId>?environmentId=<envId>`). |
-
-## Required permissions
-
-None from `GITHUB_TOKEN`: the action only talks to the Railway API, with `api_token`. Grant the job whatever its other steps need, e.g. `contents: read` for `actions/checkout`, or `permissions: {}` if it has none.
+| `service_url` | The URL of the redeployed service in the Railway panel (`https://railway.com/project/<projectId>/service/<serviceId>?environmentId=<envId>`). |
 
 ## Requirements
 
 - A Railway token in a secret, passed as `api_token` (see [Inputs](#inputs)).
 - Nothing else. The action runs on the runner's Node 24 (`runs.using: node24`) from the committed, bundled `dist/index.js`. It needs no Bun, no Node or pnpm setup step, no dependency install, and no checkout: it never reads the repository.
+
+## Required permissions
+
+None from `GITHUB_TOKEN`: the action only talks to the Railway API, with `api_token`. Grant the job what its other steps need, such as `contents: read` for `actions/checkout`, or `permissions: {}` if they need nothing.
 
 ## Example
 
@@ -86,3 +84,7 @@ jobs:
           SERVICE_URL: ${{ steps.redeploy.outputs.service_url }}
         run: echo "Redeployed → $SERVICE_URL"
 ```
+
+## How it works
+
+The action finds the service from `project_id`, `environment` and `service_name`. It takes the most recent deployment in the `SUCCESS`, `SLEEPING` or `FAILED` state that is marked `canRedeploy`, and calls the `deploymentRedeploy` mutation on it. Because a failed deployment counts, the action can retry a broken deploy without a new commit.
