@@ -113,7 +113,7 @@ If `preview` fails or is skipped, `needs` skips `preview-comment` too.
 | --- | --- | --- | --- |
 | `mode` | no | `server` | `server`, `publish` or `comment`. See [Modes](#modes). |
 | `github_token` | yes | — | `server` and `publish`: a token for the GitHub API, usually `${{ secrets.GITHUB_TOKEN }}`, to list the PR's changed files. `comment`: a token that can write PR comments, the `vland-bot` token that `preview-comment.yml` mints. |
-| `npm_token` | no | — | `server` and `publish` only. An npm classic or automation token. When set, it turns on the OIDC and token fallback mode (see [Authentication modes](#authentication-modes)). |
+| `npm_token` | no | — | `server` and `publish` only. An npm classic or automation token. When set, and `GITHUB_WORKSPACE` has no `.npmrc`, it turns on the OIDC and token fallback mode (see [Authentication modes](#authentication-modes)). |
 | `publish_mode` | no | detected | `server` and `publish` only. Overrides the [authentication mode](#authentication-modes): `token-only`, `oidc-only` or `oidc-with-token-fallback`. |
 | `vland_bot_url` | no | `https://bot.variable.land` | `server` only. The base URL of the `vland-bot` server that gets the notification after the publish. |
 | `packages` | in `comment` | — | `comment` only. The `packages` output of a `publish` run, as JSON. |
@@ -127,12 +127,12 @@ Set in `mode: publish` only:
 - `pr-number`: the number of the pull request.
 - `head-sha`: the head commit SHA of the pull request.
 
-Each `packages` entry is the same payload that `mode: server` POSTs to `vland-bot` at `POST <vland_bot_url>/v1/github/preview-release`:
+Each `packages` entry is one item of the `packages` array that `mode: server` POSTs to `vland-bot` at `POST <vland_bot_url>/v1/github/preview-release`, beside `owner`, `repo`, `prNumber` and `latestCommitSha`:
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `packageName` | `string` | The npm package name. |
-| `nextVersion` | `string` | The published preview version (`<current>-git-<short-sha>`). |
+| `nextVersion` | `string` | The published preview version: the prerelease of the current version with the preid `git-<short-sha>`, so `1.2.3` becomes `1.2.4-git-abc1234.0`. |
 | `firstTime` | `boolean` | `true` when this run published the package's first version ever. npm makes that version `latest`, and nothing can prevent it (see [First-time publishes & `latest`](#first-time-publishes--latest)), so the comment warns that `pnpm add <pkg>` resolves to a preview build until a stable release moves `latest`. |
 
 ## Requirements
@@ -158,8 +158,8 @@ permissions:
 
 ## What a run publishes
 
-- The packages the PR changes, and their workspace dependents, are found through the GitHub API's list of the PR's files.
-- Each package gets its version bumped to the prerelease `<current>-git-<short-sha>`.
+- The packages the PR changes are found through the GitHub API's list of the PR's files. Any workspace dependency of theirs, direct or transitive, that has never been published to npm is published with them. Packages that depend on a changed package are not added.
+- Each package gets its version bumped to its prerelease with the preid `git-<short-sha>`: `1.2.3` becomes `1.2.4-git-abc1234.0`.
 - Each package is published to npm under the dist-tag `pr-<pr-number>`.
 - Private packages (`"private": true`) are left out.
 - A package's **first publish ever** is a special case. npm gives it the `latest` dist-tag and won't let that tag be removed, so the preview becomes the default `pnpm add <pkg>` target until a stable release moves `latest`. The action flags these first publishes, so the PR comment can warn about it. See [First-time publishes & `latest`](#first-time-publishes--latest).
@@ -168,8 +168,8 @@ permissions:
 
 `server` and `publish` pick one of three npm publishing modes from the workspace's state and the inputs. `publish_mode` overrides the choice.
 
-- **`token-only`**, when `.npmrc` already provides auth: publishes with the existing `.npmrc` credentials, and never adds `--provenance`.
-- **`oidc-with-token-fallback`**, when the `npm_token` input is set and `.npmrc` has no auth: publishes each package with OIDC and provenance through `pnpm publish --provenance`. If a package's publish fails **and** that package has never been published to npm, it falls back to `NPM_TOKEN` auth without provenance.
+- **`token-only`**, when `GITHUB_WORKSPACE`, the directory the action runs in, has a `.npmrc`, whatever it holds: publishes with the credentials npm finds, and never adds `--provenance`.
+- **`oidc-with-token-fallback`**, when the `npm_token` input is set and `GITHUB_WORKSPACE` has no `.npmrc`: publishes each package with OIDC and provenance through `pnpm publish --provenance`. If a package's publish fails **and** that package has never been published to npm, it falls back to `NPM_TOKEN` auth without provenance.
 - **`oidc-only`**, in every other case: publishes with OIDC and provenance. Any failure is fatal.
 
 The `oidc-with-token-fallback` mode exists for the **first publishes** of packages that have no Trusted Publisher on npm yet: those land through the token, without provenance, and every other package keeps its provenance attestation.
@@ -183,7 +183,7 @@ So for a new package, the first PR preview becomes the version that `pnpm add <p
 The action doesn't try to fix this at the registry, because it can't. It detects first publishes and reports `firstTime: true`, and the PR comment marks those packages with `†` and a footnote. Each published preview stays installable by tag or by exact version:
 
 - `pnpm add <pkg>@pr-<n>`, by the PR's tag.
-- `pnpm add <pkg>@<version>`, by the exact `<current>-git-<short-sha>` version.
+- `pnpm add <pkg>@<version>`, by the exact version that the PR comment shows.
 
 The fix is a real release: the normal release pipeline publishes a stable version and moves `latest` to it.
 
@@ -192,8 +192,8 @@ The fix is a real release: the normal release pipeline publishes a stable versio
 The action runs the real `pnpm` CLI for the work:
 
 - `pnpm list -r --json --depth 0` to list the workspace.
-- `pnpm version prerelease --preid git-<sha> --no-git-tag-version` to bump.
-- `pnpm publish --tag pr-<n> --no-git-checks [--provenance]` to publish.
+- `pnpm version prerelease --preid git-<short-sha> --no-git-tag-version --no-git-checks` to bump.
+- `pnpm publish --tag pr-<n> --access public --no-git-checks [--provenance]` to publish.
 
 `pnpm publish` handles `workspace:*` and `catalog:` resolution, `publishConfig` overrides, lifecycle scripts (`prepublishOnly`, `prepack`, `prepare`) and the npm Trusted Publisher OIDC exchange. The action only picks which packages get bumped, and the auth mode.
 
