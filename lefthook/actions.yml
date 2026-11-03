@@ -1,0 +1,17 @@
+# The root has no biome.json or tsconfig.json: each Node action has its own. From the root, rr tsc finds no
+# tsconfig.json to check, and Biome refuses the actions' configs as nested roots. So these jobs replace the shared
+# jsc and tsc with the mise tasks that run rr in every action. mise run jsc checks without fixing: nothing to stage.
+pre-commit:
+  jobs:
+    - name: jsc
+      run: mise run jsc
+      stage_fixed: false
+      glob:
+        - "actions/**/*.{ts,tsx,mts,cts}"
+        - "actions/**/*.{json,md,yml}"
+
+    - name: tsc
+      run: mise run tsc
+      glob:
+        - "actions/**/*.{ts,tsx,mts,cts}"
+        - "actions/**/*tsconfig*.json"

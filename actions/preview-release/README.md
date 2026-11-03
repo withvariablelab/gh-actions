@@ -8,11 +8,11 @@ This action publishes a **per-PR preview release** of a standalone library, a si
 
 The PR comment is posted either by the `vland-bot` server (`mode: server`, the default) or by a second job that never runs PR code (`mode: publish` and `mode: comment`). The `mode` input picks what a run does:
 
-| `mode` | Publishes | Comments | Use it for |
-| --- | --- | --- | --- |
-| `server` (default) | yes | Through the `vland-bot` server: the action POSTs the result, authenticated with a GitHub OIDC token (audience `vland-bot`). | Repos that let the `vland-bot` server post the comment. It is the behavior from before modes existed. |
-| `publish` | yes | No. It sets the [`packages`, `pr-number` and `head-sha` outputs](#outputs) instead. | Job 1 of the [two-job pattern](#two-job-previews). |
-| `comment` | no | Yes, directly: it upserts the comment with `github_token`. | Job 2 of the two-job pattern, through the [`preview-comment` reusable workflow](../../.github/workflows/preview-comment.yml). |
+| `mode`             | Publishes | Comments                                                                                                                    | Use it for                                                                                                                    |
+| ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `server` (default) | yes       | Through the `vland-bot` server: the action POSTs the result, authenticated with a GitHub OIDC token (audience `vland-bot`). | Repos that let the `vland-bot` server post the comment. It is the behavior from before modes existed.                         |
+| `publish`          | yes       | No. It sets the [`packages`, `pr-number` and `head-sha` outputs](#outputs) instead.                                         | Job 1 of the [two-job pattern](#two-job-previews).                                                                            |
+| `comment`          | no        | Yes, directly: it upserts the comment with `github_token`.                                                                  | Job 2 of the two-job pattern, through the [`preview-comment` reusable workflow](../../.github/workflows/preview-comment.yml). |
 
 ## Usage
 
@@ -99,25 +99,25 @@ What the caller needs:
 
 `preview-comment.yml` inputs:
 
-| Input | Required | Description |
-| --- | --- | --- |
-| `packages` | yes | The `packages` output of the publish job. |
-| `action` | yes | `preview-release` or `monorepo-preview-release`: the same action the publish job used. |
+| Input      | Required | Description                                                                            |
+| ---------- | -------- | -------------------------------------------------------------------------------------- |
+| `packages` | yes      | The `packages` output of the publish job.                                              |
+| `action`   | yes      | `preview-release` or `monorepo-preview-release`: the same action the publish job used. |
 
 If `preview` fails or is skipped, `needs` skips `preview-comment` too.
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `mode` | no | `server` | `server`, `publish` or `comment`. See [Modes](#modes). |
-| `npm_token` | no | — | `server` and `publish` only. An npm classic or automation token. When set, and `working_directory` has no `.npmrc`, it turns on the OIDC and token fallback mode (see [Authentication modes](#authentication-modes)). |
-| `publish_mode` | no | detected | `server` and `publish` only. Overrides the [authentication mode](#authentication-modes): `token-only`, `oidc-only` or `oidc-with-token-fallback`. |
-| `working_directory` | no | `.` | `server` and `publish` only. The directory with the `package.json` to publish, for a library that lives in a subdirectory. |
-| `vland_bot_url` | no | `https://bot.variable.land` | `server` only. The base URL of the `vland-bot` server that gets the notification after the publish. |
-| `packages` | in `comment` | — | `comment` only. The `packages` output of a `publish` run, as JSON. |
-| `app_slug` | in `comment` | — | `comment` only. The slug of the GitHub App behind `github_token` (`preview-comment.yml` passes the `app-slug` output of `actions/create-github-app-token`). Only a marker comment written by `<app_slug>[bot]` is updated. |
-| `github_token` | in `comment` | — | `comment` only. A token that can write PR comments: the `vland-bot` token that `preview-comment.yml` mints. |
+| Input               | Required     | Default                     | Description                                                                                                                                                                                                                |
+| ------------------- | ------------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`              | no           | `server`                    | `server`, `publish` or `comment`. See [Modes](#modes).                                                                                                                                                                     |
+| `npm_token`         | no           | —                           | `server` and `publish` only. An npm classic or automation token. When set, and `working_directory` has no `.npmrc`, it turns on the OIDC and token fallback mode (see [Authentication modes](#authentication-modes)).      |
+| `publish_mode`      | no           | detected                    | `server` and `publish` only. Overrides the [authentication mode](#authentication-modes): `token-only`, `oidc-only` or `oidc-with-token-fallback`.                                                                          |
+| `working_directory` | no           | `.`                         | `server` and `publish` only. The directory with the `package.json` to publish, for a library that lives in a subdirectory.                                                                                                 |
+| `vland_bot_url`     | no           | `https://bot.variable.land` | `server` only. The base URL of the `vland-bot` server that gets the notification after the publish.                                                                                                                        |
+| `packages`          | in `comment` | —                           | `comment` only. The `packages` output of a `publish` run, as JSON.                                                                                                                                                         |
+| `app_slug`          | in `comment` | —                           | `comment` only. The slug of the GitHub App behind `github_token` (`preview-comment.yml` passes the `app-slug` output of `actions/create-github-app-token`). Only a marker comment written by `<app_slug>[bot]` is updated. |
+| `github_token`      | in `comment` | —                           | `comment` only. A token that can write PR comments: the `vland-bot` token that `preview-comment.yml` mints.                                                                                                                |
 
 ## Outputs
 
@@ -129,11 +129,11 @@ Set in `mode: publish` only:
 
 Each `packages` entry is one item of the `packages` array that `mode: server` POSTs to `vland-bot` at `POST <vland_bot_url>/v1/github/preview-release`, beside `owner`, `repo`, `prNumber` and `latestCommitSha`:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `packageName` | `string` | The npm package name. |
-| `nextVersion` | `string` | The published preview version: the prerelease of the current version with the preid `git-<short-sha>`, so `1.2.3` becomes `1.2.4-git-abc1234.0`. |
-| `firstTime` | `boolean` | `true` when this run published the package's first version ever. npm makes that version `latest`, and nothing can prevent it (see [First-time publishes & `latest`](#first-time-publishes--latest)), so the comment warns that `pnpm add <pkg>` resolves to a preview build until a stable release moves `latest`. |
+| Field         | Type      | Description                                                                                                                                                                                                                                                                                                        |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packageName` | `string`  | The npm package name.                                                                                                                                                                                                                                                                                              |
+| `nextVersion` | `string`  | The published preview version: the prerelease of the current version with the preid `git-<short-sha>`, so `1.2.3` becomes `1.2.4-git-abc1234.0`.                                                                                                                                                                   |
+| `firstTime`   | `boolean` | `true` when this run published the package's first version ever. npm makes that version `latest`, and nothing can prevent it (see [First-time publishes & `latest`](#first-time-publishes--latest)), so the comment warns that `pnpm add <pkg>` resolves to a preview build until a stable release moves `latest`. |
 
 ## Requirements
 

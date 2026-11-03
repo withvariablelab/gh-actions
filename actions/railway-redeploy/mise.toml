@@ -8,6 +8,9 @@ _.path = [
 description = 'install deps'
 run = ['npm install']
 
+[tasks.jsc]
+run = 'rr jsc'
+
 [tasks.tsc]
 run = 'rr tsc'
 

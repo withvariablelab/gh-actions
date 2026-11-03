@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  secrets:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 🛠️ Setup mise
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.19
+          install_args: gitleaks
+          cache: true
+
+      - name: 🔐 Scan the new commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: gitleaks git --redact --verbose --log-opts="$BASE_SHA..$HEAD_SHA"
+
+  # The check for the ruleset: the static checks, the tests and the dist check, after the secret scan. A job skipped
+  # because a job it needs failed reports success, so this one runs after a failed scan too, and fails on it.
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: secrets
+    if: ${{ !cancelled() }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: 🔐 No secret leaked
+        env:
+          SECRETS: ${{ needs.secrets.result }}
+        run: test "$SECRETS" = "success"
+
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🛠️ Setup mise
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.19
+          install: true
+          cache: true
+          experimental: true
+
+      # The root's tooling with pnpm, then each Node action's own dependencies, both from their lockfiles.
+      - name: 📦 Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          for lock in actions/*/package-lock.json; do
+            npm ci --prefix "$(dirname "$lock")"
+          done
+
+      - name: 🪞 Check shared comment code
+        run: |
+          for file in comment.ts comment.test.ts core.test.ts types.ts; do
+            diff -u "actions/preview-release/src/$file" "actions/monorepo-preview-release/src/$file"
+          done
+
+      - name: 💅 Check
+        run: mise run check
+
+      - name: 🧪 Test
+        run: mise run test
+
+      # Prints only file names and a --stat, never the contents of files from the pull request.
+      - name: 🔨 Check dist
+        run: |
+          if ! mise run check-dist; then
+            echo "::error::dist/ is out of sync with src/. Run 'mise run check-dist' locally and commit the rebuilt dist/."
+            exit 1
+          fi

@@ -1,6 +1,7 @@
 name: Check actions dist sync
 
 # No paths filter: dist/ is what consumers run, and a required check must always run.
+# CI's Test job runs the same steps: this workflow stays while the main ruleset requires "Test and check dist".
 on:
   pull_request:
 
@@ -20,8 +21,9 @@ jobs:
           persist-credentials: false
 
       - name: 🛠️ Setup mise
-        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
         with:
+          version: 2026.10.19
           install: true
           cache: true
           experimental: true
@@ -38,7 +40,7 @@ jobs:
       - name: 🧪 Test
         run: mise run test
 
-      # Prints only file names and a --stat, never PR-controlled contents.
+      # Prints only file names and a --stat, never the contents of files from the pull request.
       - name: 🧪 Check dist
         run: |
           if ! mise run check-dist; then
