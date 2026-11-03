@@ -71,4 +71,4 @@ A new dependency version has to be at least 24 hours old before it gets in. Most
 
 ## Security linting
 
-Workflow audit ([`workflow-audit.yml`](../.github/workflows/workflow-audit.yml)) runs [zizmor](https://docs.zizmor.sh) on every pull request and every push to `main`, with the config in [`.github/zizmor.yml`](../.github/zizmor.yml). Third-party actions are pinned by SHA, and `withvariablelab/*` is allowed at `@main`. To run it locally: `pipx run --spec zizmor==1.30.1 zizmor .`.
+Workflow audit ([`workflow-audit.yml`](../.github/workflows/workflow-audit.yml)) runs [zizmor](https://docs.zizmor.sh) on every pull request and every push to `main`, with the config in [`.github/zizmor.yml`](../.github/zizmor.yml). Third-party actions are pinned by SHA, and `withvariablelab/*` is allowed at `@main`. To run it locally: `pipx run --spec zizmor==1.31.1 zizmor .`.
