@@ -10,14 +10,13 @@ How to work on gh-actions in a clone. The [contributing guide](contributing.md) 
 
 ## Setup
 
-[mise](https://mise.jdx.dev) pins Node 24 and pnpm 10.30.3 in `mise.toml`, which needs mise 2026.6.6 or later. The repository has no `mise.lock`. `mise.toml` makes the root a mise monorepo with each folder in `actions/` as a config root, so a task run at the root runs in every action that declares it. It also puts `node_modules/.bin` on the `PATH`, so the tools run by name.
+[mise](https://mise.jdx.dev) 2026.10.19 or later pins Node 24 and pnpm 12 in `mise.toml`, locked in `mise.lock`. `mise.toml` makes the root a mise monorepo with each folder in `actions/` as a config root, so a task run at the root runs in every action that declares it. It also puts `node_modules/.bin` on the `PATH`, so the tools run by name.
 
 ```sh
-mise run setup         # mise install, pnpm install, then npm install in each Node action
-pnpm lefthook install  # the git hooks, once per clone
+mise run setup  # mise install, pnpm install, then npm install in each Node action
 ```
 
-pnpm doesn't run lefthook's install script (`ignoredBuiltDependencies` in `package.json`), so the hooks wait for `lefthook install`.
+`pnpm install` also installs the git hooks: lefthook's postinstall writes them. With `CI` set, that postinstall skips them, so after a `CI=1 pnpm install` run `pnpm lefthook install` to add them.
 
 ## Tasks
 
@@ -55,7 +54,7 @@ To add a Node action, copy the structure of `monorepo-preview-release` or `railw
 
 A new dependency version has to be at least 24 hours old before it gets in. Most malicious releases are pulled within the first hour.
 
-- **Root tooling** (pnpm): [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) sets `minimumReleaseAge: 1440`, except for `@variablelab/*` and `@rrlab/*`. pnpm 10.16 or later, pinned in `package.json` and `mise.toml`, refuses a version that is too new with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
+- **Root tooling** (pnpm): [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) sets `minimumReleaseAge: 1440`, except for `@variablelab/*`, `@rrlab/*` and `@variableland/*`. pnpm, pinned in `mise.toml` and required by `devEngines` in `package.json`, refuses a version that is too new with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
 - **Action dependencies** (npm, one `package-lock.json` per action): npm 11.10 and later have a lasting cooldown, `min-release-age`, but the actions don't set it. When you add or update a dependency of an action, pass `--before` with a time 24 hours in the past, so npm resolves only versions published before it:
 
   ```sh

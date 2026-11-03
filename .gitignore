@@ -17,3 +17,7 @@ node_modules/
 
 # mise local overrides
 mise.local.toml
+
+# mise state, but the lock's sidecars
+.mise/*
+!.mise/locks/
