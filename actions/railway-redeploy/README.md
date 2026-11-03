@@ -16,18 +16,18 @@ This action redeploys a Railway service through the Railway GraphQL API, and ret
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `project_id` | yes | — | The ID of the Railway project the service is in. |
-| `environment` | yes | — | The environment's name, such as `staging` or `production`. Case doesn't matter. |
-| `service_name` | yes | — | The service's name as the Railway dashboard shows it. Case doesn't matter, and no service ID is needed. |
-| `api_token` | yes | — | A Railway account or workspace token with access to the project. Project tokens don't work: the action sends `Authorization: Bearer`, and Railway expects a project token in a `Project-Access-Token` header. |
-| `api_url` | no | `https://backboard.railway.com/graphql/v2` | Change it only to target a non-standard Railway endpoint. |
+| Input          | Required | Default                                    | Description                                                                                                                                                                                                   |
+| -------------- | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project_id`   | yes      | —                                          | The ID of the Railway project the service is in.                                                                                                                                                              |
+| `environment`  | yes      | —                                          | The environment's name, such as `staging` or `production`. Case doesn't matter.                                                                                                                               |
+| `service_name` | yes      | —                                          | The service's name as the Railway dashboard shows it. Case doesn't matter, and no service ID is needed.                                                                                                       |
+| `api_token`    | yes      | —                                          | A Railway account or workspace token with access to the project. Project tokens don't work: the action sends `Authorization: Bearer`, and Railway expects a project token in a `Project-Access-Token` header. |
+| `api_url`      | no       | `https://backboard.railway.com/graphql/v2` | Change it only to target a non-standard Railway endpoint.                                                                                                                                                     |
 
 ## Outputs
 
-| Output | Description |
-| --- | --- |
+| Output        | Description                                                                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `service_url` | The URL of the redeployed service in the Railway panel (`https://railway.com/project/<projectId>/service/<serviceId>?environmentId=<envId>`). |
 
 ## Requirements

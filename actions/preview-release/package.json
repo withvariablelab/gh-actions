@@ -18,7 +18,7 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.4",
+    "@biomejs/biome": "2.6.4",
     "@rrlab/biome-config": "0.0.7",
     "@rrlab/ts-config": "0.0.6",
     "@types/node": "24.12.4",
