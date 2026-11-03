@@ -50,8 +50,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-    env:
-      MISE_EXPERIMENTAL: "1"
     steps:
       - name: 🔐 No secret leaked
         env:
