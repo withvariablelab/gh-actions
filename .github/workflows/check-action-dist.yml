@@ -40,7 +40,7 @@ jobs:
       - name: 🧪 Test
         run: mise run test
 
-      # Prints only file names and a --stat, never PR-controlled contents.
+      # Prints only file names and a --stat, never the contents of files from the pull request.
       - name: 🧪 Check dist
         run: |
           if ! mise run check-dist; then
