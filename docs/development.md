@@ -5,12 +5,13 @@ How to work on gh-actions in a clone. The [contributing guide](contributing.md) 
 ## Layout
 
 - `actions/<name>/`: one action per folder, named as in `uses:`, with its README. A Node action also holds `src/`, the committed `dist/`, and its own `package.json`, `package-lock.json`, `mise.toml`, `tsconfig.json` and `biome.json`. A composite action holds only `action.yml` and its README.
+- `lefthook/`: the git hook jobs that take the place of `@rrlab/cli`'s shared `jsc` and `tsc`, to run them in every action (see [CI](#ci)).
 - `.github/workflows/`: the repository's own CI, and [`preview-comment.yml`](../.github/workflows/preview-comment.yml), the reusable workflow that callers run.
 - The root: the tooling the actions share (Biome, TypeScript, run-run and lefthook), installed with pnpm, and the mise tasks that run in every action.
 
 ## Setup
 
-[mise](https://mise.jdx.dev) 2026.10.19 or later pins Node 24 and pnpm 12 in `mise.toml`, locked in `mise.lock`. `mise.toml` makes the root a mise monorepo with each folder in `actions/` as a config root, so a task run at the root runs in every action that declares it. It also puts `node_modules/.bin` on the `PATH`, so the tools run by name.
+[mise](https://mise.jdx.dev) 2026.10.19 or later pins Node 24, pnpm 12 and [gitleaks](https://github.com/gitleaks/gitleaks) in `mise.toml`, locked in `mise.lock`. `mise.toml` makes the root a mise monorepo with each folder in `actions/` as a config root, so a task run at the root runs in every action that declares it. It also puts `node_modules/.bin` on the `PATH`, so the tools run by name.
 
 ```sh
 mise run setup  # mise install, pnpm install, then npm install in each Node action
@@ -22,6 +23,7 @@ mise run setup  # mise install, pnpm install, then npm install in each Node acti
 
 ```sh
 mise run check       # Biome, then the type check, in every Node action
+mise run jsc         # only Biome
 mise run tsc         # only the type check
 mise run test        # the unit tests, in every action that has them
 mise run build       # build dist/ in every Node action, skipped when nothing changed
@@ -33,7 +35,7 @@ In an action's folder, `mise run <task>` runs that action's task only.
 ## CI
 
 - **On each pull request:** Check actions dist sync diffs the comment code that `preview-release` and `monorepo-preview-release` share, then runs `mise run test` and `mise run check-dist`. Workflow audit runs zizmor on the workflows, and runs again on each push to `main` (see [Security linting](#security-linting)). Both are required checks.
-- **Git hooks** ([lefthook](https://lefthook.dev)): on commit, `mise run check` when a TypeScript file or a `tsconfig.json` under `actions/` is staged. On push, `mise run test` when an action's `src/` or `package.json` changed, and `mise run check-dist` when its `src/`, `dist/`, `package.json`, `package-lock.json` or `tsconfig.json` changed.
+- **Git hooks** ([lefthook](https://lefthook.dev)): `lefthook.yml` extends `base.yml`, the hooks that `@rrlab/cli` ships, then [`lefthook/actions.yml`](../lefthook/actions.yml), and its own `shared-hooks` job fails a commit, saying to run `pnpm install`, when `base.yml` is missing from `node_modules`. On commit, in parallel: gitleaks scans the staged changes for secrets, `mise run jsc` runs when a TypeScript, JSON, Markdown or YAML file under `actions/` is staged, and `mise run tsc` when a TypeScript file or a `tsconfig.json` is. Those two run `rr` in every action, in place of the shared jobs' `rr jsc` and `rr tsc` at the root, which has no `biome.json` or `tsconfig.json`. On push, `mise run test` when an action's `src/` or `package.json` changed, and `mise run check-dist` when its `src/`, `dist/`, `package.json`, `package-lock.json` or `tsconfig.json` changed.
 - **Every Monday:** Dependency audit runs `pnpm audit` on the root lockfile and `npm audit` in each Node action, and keeps an issue labeled `dependency-audit` open while it finds known vulnerabilities.
 
 ## Node action convention
