@@ -4,8 +4,8 @@
   "private": true,
   "dependencies": {
     "@biomejs/biome": "2.6.4",
-    "@rrlab/biome-plugin": "1.2.3",
-    "@rrlab/cli": "1.7.0",
+    "@rrlab/biome-plugin": "1.3.0",
+    "@rrlab/cli": "1.7.1",
     "@rrlab/ts-plugin": "1.3.0",
     "lefthook": "2.2.2",
     "typescript": "7.0.2"
