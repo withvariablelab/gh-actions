@@ -3,10 +3,5 @@
   "extends": ["@rrlab/biome-config"],
   "files": {
     "includes": ["**", "!dist"]
-  },
-  "markdown": {
-    "formatter": {
-      "formatEmbeds": false
-    }
   }
 }
